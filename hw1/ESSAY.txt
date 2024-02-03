@@ -1,0 +1,17 @@
+1. In the homework assignment, we are using character-based ngrams, i.e., the gram units are characters. Do you expect token-based ngram models to perform better?
+
+I would expect character based n-grams to perform better. Since different languages contain different words, we expect different langugages to be different at the character level as well. However, I think it might perform better at distinguishing similar languages such as Malaysian and Indonesian, because the 2 languages are very similar at the token level, and the differences lie mainly in sentence structure. Using token based models can capture higher level features that character based models cannot capture.
+
+2. What do you think will happen if we provided more data for each category for you to build the language models? What if we only provided more data for Indonesian?
+
+Providing more data for each category will increase the accuracy of the language model. However, if we only provide more data for Indonesian, we may cause the frequency of Indonesian being the detected language to decrease. This is because we are using a probability based model which multiplies the values of each of the tokens together. Having a larger dataset means that each individual ngram that is matched will have a smaller probability value, and secondly, there will be more matches to the language model for detecting Indonesian, which means there are more terms being multiplied together. This will cause any Indonesian sentence to be given extremely small values, causing it to not be detected accurately.
+
+3. What do you think will happen if you strip out punctuations and/or numbers? What about converting upper case characters to lower case?
+
+Stripping out numbers will improve the reliability of the model, as they are mostly irrelevant to language detection since they will be used the same way for all languages. Punctuation may decrease the accuracy of results if some words in specific languages contain some form of punctuation, similar to contractions in English.
+
+Making things lower case will reduce the vocabulary size and will make the model more generalisable. For a task like language detection, the capitalisation of words should not matter too much, so it will likely have a negligible impact on performance.
+
+4. We use 4-gram models in this homework assignment. What do you think will happen if we varied the ngram size, such as using unigrams, bigrams and trigrams?
+
+Using a unigram or bigram model will likely be ineffective since much of the context around the characters are ignored because of the limited context window. Decreasing the context window of the model code provided in my solution showed a slight degradation in model performance when the context window is decreased from 4 to 3 due to its inability to detect new languages (19/20), and a further decrease to 2 caused a sharper drop in performance in the test set (15/20).
