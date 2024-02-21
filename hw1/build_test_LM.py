@@ -31,7 +31,7 @@ def build_LM(in_file):
     with open(in_file, "r") as file:
         for line in file:
             words = re.sub(r'\d+\s*|[' + string.punctuation + ']', '', line) # remove numbers and subsequent whitespaces
-            words = nltk.word_tokenize(words)
+            words = words.strip().split()
             label = words[0]
             if label not in model: # init list for language if it is new
                 model[label] = {}
@@ -62,7 +62,7 @@ def test_LM(in_file, out_file, LM: Dict[str, Dict[str, float]]):
     with open(in_file, "r") as file:
         for line in file:
             words = re.sub(r'\d+\s*|[' + string.punctuation + ']', '', line) # remove numbers and subsequent whitespaces
-            words = nltk.word_tokenize(words)
+            words = words.strip().split()
             chars = padding + ' '.join(words) + padding
             max_score = -math.inf # default values for max likelihood score, will be overriden
             max_lang = "none"
