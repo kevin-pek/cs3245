@@ -1,0 +1,57 @@
+1. Whether to remove numbers from the dictionary depends on the type of dataset
+   we are indexing. For example, if we do not expect numbers to be used as query
+   terms, it should be safe to remove it from the dictionary.
+
+   To normalise numbers we can look at a few examples of numbers in the dataset.
+
+   87.5
+   87.50
+   87/88
+   870
+   870,000
+
+   To normalise numbers, including decimals and fractions, we can do rounding or
+   express it in standard form to get a consistent representation of numbers.
+   However this also depends on the data we are dealing with, for example if we
+   are dealing with financial data, currencies, or percentages, it may not make
+   sense to round the numbers.
+
+   Other common type of numbers we need to deal with are dates, which can appear
+   in numerous formats. In such cases we also need a standard representation, to
+   convert all dates into, such as ISO 8601.
+
+   For large numbers, commas are introduced to improve readability, but we can
+   remove them for the sake of indexing. So numbers like 870,000 can be reduced
+   to 870000 for consistent representation of the values.
+
+   If we were to remove numbers from the dictionary, this will lead to a 16.9%
+   drop in the dictionary file size, and a 8.7% drop in the postings file size.
+   The lesser percentage decrease in the size of the postings file is likely a
+   result of the fact that many of these numbers appear sparsely in the dataset,
+   occurring in only 1 or 2 documents in total.
+
+2. Removing stop words will reduce the size of the index, since many stop words
+   are frequently occuring words. This will greatly reduce the index load time
+   and search performance. Since we are dealing with boolean retrieval, we do
+   not have to worry about the loss of context, and it is also unlikely that the
+   user will only have stopwords in the search query.
+
+   Joining the removal of numbers with stopword removal leads to a significant
+   drop in the size of the dictionary and posting list created after indexing.
+   The exact code that was used for tokenisation is found in utils.py file.
+   When comparing the performance of our search engine after removing the stop
+   words against the original implementation, we saw a 52.8% decrease in the
+   size of the dictionary file, and a 39.1% decrease in the size of the postings
+   file. There was also a notable decrease in time taken to search and index the
+   entire dataset.
+
+3. The word and sentence tokenizer tends to have trouble dealing with certain
+   things such as abbreviations and acronyms. For example, if the word 'e.g.' is
+   used in a sentence, the sentence tokenizer tends to misinterpret this
+   abbreviation as the end of a sentence. The word tokenizer also has issues
+   dealing with contractions such as the word "isn't", which will be split into
+   "is" and "n't". Such issues will lead to the sentence losing its meaning or
+   grammatical role. A possible way to fix this is to introduce a new rule to be
+   run before the tokenisation step, that will identify and replace commonly
+   known acronyms, abbreviations and contractions to a form that will be
+   correctly handled by the tokeniser.
