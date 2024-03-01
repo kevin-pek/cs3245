@@ -36,16 +36,35 @@ The search phase of the program does the following:
 2. Open the query file, and for each line in the file, apply the shunting-yard algorithm
    to convert the query into postfix expression.
 3. Evaluate the postfix expression by loading the term's postings list from the posting
-   file, then applying the respective AND, OR or NOT operations. To speed up NOT queries,
-   the universe of postings are loaded into a set before all queries are processed. This
-   allows for O(1) removal from the universe set when trying to get the result from a NOT
-   query.
+   file, then applying the respective AND, OR or NOT operations.
+
+During the evaluation of the postfix query, I employed a few strategies to speed up the
+search process:
+1. Delay the evaluation of NOT queries. Instead we wrap each operand in a class that
+   stores whether it is a negated search term, using the boolean attribute is_neg.
+   Delaying the evaluation of NOT queries also allows us to introduce a few more
+   optimisations in the next step.
+2. Use De Morgan's Law where applicable to maximise the number of AND queries. This is
+   done by applying it in the following cases:
+   - NOT X AND NOT Y -> NOT (X OR  Y)
+   - NOT X OR  NOT Y -> NOT (X AND Y)
+   - NOT X OR  Y     -> NOT (X AND NOT Y) and vice versa
+3. Introduce a heap to keep track of the current chain of AND queries. This will delay
+   the evaluation of AND queries until the query processing is done, or a different
+   boolean operation is processed. After this the operands in the AND heap are all
+   evaluated in ascending order of term frequency, and the result is pushed onto the
+   results stack before subsequent operations are processed.
+4. Do not load the universe set of postings until it is necessary. With the previous
+   optimisations, this is left to the end of the evaluation, where if the term is
+   a negative term, we will load the universe set to get the result.
 
 == Files included with this submission ==
 
-List the files in your submission here and provide a short 1 line
-description of each file.  Make sure your submission's files are named
-and formatted correctly.
+index.py         - Indexing phase
+search.py        - Searching phase
+linkedlist.py    - Implementation of LinkedList class and boolean operations
+preprocessing.py - Text processing functions
+utils.py         - Contains Index, Operand and AndHeap class for processing boolean queries
 
 == Statement of individual work ==
 

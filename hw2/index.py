@@ -1,13 +1,11 @@
 #!/usr/bin/python3
-import nltk
 import sys
 import getopt
 
 import os
 from nltk.downloader import shutil
-from utils import process_document, process_document_remove_nums, process_document_remove_stopwords
+from preprocessing import process_document
 from spimi import SPIMI
-import time
 
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
@@ -23,7 +21,6 @@ def build_index(in_dir, out_dict, out_postings):
 
     # generate token id pairs
     pairs = []
-    start = time.time()
     for filename in os.listdir(in_dir):
         filepath = os.path.join(in_dir, filename)
         if not os.path.isfile(filepath):
@@ -32,16 +29,11 @@ def build_index(in_dir, out_dict, out_postings):
         id = int(filename)
         file = open(filepath, 'r')
         document = file.read()
-        pairs.extend(process_document_remove_stopwords(id, document))
+        pairs.extend(process_document(id, document))
         file.close()
-    print(f'Pair generation: {time.time() - start}')
     spimi = SPIMI(blocks_path, memory_limit)
-    start = time.time()
     spimi.invert(pairs)
-    print(f'SPIMI-Invert: {time.time() - start}')
-    start = time.time()
     spimi.merge_blocks(out_dict, out_postings)
-    print(f'Merge Blocks: {time.time() - start}')
     shutil.rmtree(blocks_path) # cleanup intermediate block files
 
 input_directory = output_file_dictionary = output_file_postings = None

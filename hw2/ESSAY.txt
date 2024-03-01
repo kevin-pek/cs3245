@@ -24,11 +24,8 @@
    remove them for the sake of indexing. So numbers like 870,000 can be reduced
    to 870000 for consistent representation of the values.
 
-   If we were to remove numbers from the dictionary, this will lead to a 16.9%
-   drop in the dictionary file size, and a 8.7% drop in the postings file size.
-   The lesser percentage decrease in the size of the postings file is likely a
-   result of the fact that many of these numbers appear sparsely in the dataset,
-   occurring in only 1 or 2 documents in total.
+   If we were to remove numbers from the dictionary, this will lead to a 4.48%
+   drop in the dictionary file size, and a 5.56% drop in the postings file size.
 
 2. Removing stop words will reduce the size of the index, since many stop words
    are frequently occuring words. This will greatly reduce the index load time

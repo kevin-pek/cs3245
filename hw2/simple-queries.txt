@@ -1,0 +1,21 @@
+NOT test
+oil AND prices
+mamamia AND oil
+trade OR oil
+mamamia OR trade
+BREAK
+nasdaq AND NOT stocks
+NOT stocks AND nasdaq
+NOT nasdaq OR stocks
+stocks OR NOT nasdaq
+BREAK
+NOT Nasdaq AND NOT stocks
+NOT (Nasdaq OR stocks)
+BREAK
+nasdaq AND NOT stocks
+nasdaq AND stocks
+nasdaq AND stocks AND (NOT the OR and)
+nasdaq AND stocks AND (and OR NOT the)
+nasdaq AND stocks AND NOT (the AND NOT and)
+nasdaq AND stocks AND NOT (NOT and AND the)
+american OR NOT analyst

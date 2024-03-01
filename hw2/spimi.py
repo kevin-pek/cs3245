@@ -3,6 +3,7 @@ import linecache
 import heapq
 import pickle
 import os
+from linkedlist import LinkedList
 
 class SPIMI:
     def __init__(self, blocks_path, memory_limit) -> None:
@@ -43,7 +44,6 @@ class SPIMI:
         if line:
             term, postings_str = line.strip().split('\t')
             postings = set(map(int, postings_str.split(',')))
-            # postings = LinkedList.from_list(list(map(int, postings_str.split(','))))
             return term, postings
         print(f'Invalid entry at {file}, line {line_no}')
 
@@ -69,7 +69,6 @@ class SPIMI:
             # check if there are duplicate terms, if so find and merge all of them
             next_term_list = heapq.nsmallest(1, pq, key=lambda x: x[0])
             while next_term_list and next_term_list[0][0] == term: # merge identical terms
-                # print(f'Duplicate term encountered: {next_term_list} and {term}')
                 # load the duplicate term from its file and merge the posting lists
                 _, j, next_line_no = heapq.heappop(pq)
                 _, next_postings = self.read_block(files[j], next_line_no)

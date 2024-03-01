@@ -9,20 +9,18 @@ class Node:
 class LinkedList:
     def __init__(self, head = None):
         self.head = head
-        self.length = 1 if head else 0
+        self.length = 0
 
     @classmethod
     def from_list(cls, postings):
         llist = cls(Node(-1))
         curr = llist.head
-        llist.length = 0
         for p in postings:
             node = Node(p)
             curr.next = node
             curr = curr.next
             llist.length += 1
         llist.head = llist.head.next
-        llist.add_skip_pointers()
         return llist
 
     def to_list(self) -> list[str]:
@@ -60,7 +58,6 @@ def intersect(p1: LinkedList | None, p2: LinkedList | None):
     if not p1 or not p2:
         return None
     ans = LinkedList(Node(-1)) # initialise LinkedList with a dummy node
-    ans.length = 0
     h1, h2 = p1.head, p2.head
     curr = ans.head
     while h1 and h2:
@@ -92,7 +89,6 @@ def union(p1: LinkedList | None, p2: LinkedList | None):
         return p2
     h1, h2 = p1.head, p2.head
     ans = LinkedList(Node(-1)) # initialise LinkedList with a dummy node
-    ans.length = 0
     curr = ans.head
     while h1 and h2:
         if h1.id < h2.id:
@@ -120,14 +116,33 @@ def union(p1: LinkedList | None, p2: LinkedList | None):
     ans.head = ans.head.next # remove dummy head
     return ans
 
-def complement(p: LinkedList | None, u: set):
+def difference(p: LinkedList | None, u: LinkedList | None):
     if not p:
-        return LinkedList.from_list(sorted(u))
+        return u
     elif not u:
         return None
-    h = p.head
-    ans = u.copy()
-    while h:
-        ans.discard(h.id)
-        h = h.next
-    return LinkedList.from_list(sorted(ans))
+
+    ans = LinkedList(Node(-1))
+    curr = ans.head
+    h1, h2 = p.head, u.head
+    while h2:
+        if not h1: # if universe is exhausted, add all remaining items from posting list
+            curr.next = Node(h2.id)
+            curr = curr.next
+            h2 = h2.next
+            ans.length += 1
+            continue
+
+        if h2.id < h1.id:
+            curr.next = Node(h2.id)
+            curr = curr.next
+            h2 = h2.next
+            ans.length += 1
+        elif h2.id > h1.id:
+            h1 = h1.next
+        else:
+            h1 = h1.next
+            h2 = h2.next
+
+    ans.head = ans.head.next
+    return ans
