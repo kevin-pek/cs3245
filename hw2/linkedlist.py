@@ -49,7 +49,7 @@ class LinkedList:
             curr = curr.next
 
     def __repr__(self) -> str:
-        return 'LinkedList: ' + str(self.length) # self.to_list())
+        return 'LinkedList: ' + str(self.length)
 
     def __len__(self):
         return self.length
@@ -117,6 +117,7 @@ def union(p1: LinkedList | None, p2: LinkedList | None):
     return ans
 
 def difference(p: LinkedList | None, u: LinkedList | None):
+    """Returns list of nodes not found in p but are in u."""
     if not p:
         return u
     elif not u:

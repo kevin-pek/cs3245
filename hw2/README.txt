@@ -3,12 +3,11 @@ Email(s): e0726456@u.nus.edu
 
 == Python Version ==
 
-I'm using Python Version 3.10.13 for
-this assignment.
+I'm using Python Version 3.10.13 for this assignment.
 
 == General Notes about this assignment ==
 
-The indexing phaae of the program does the following:
+The indexing phase of the program does the following:
 
 1. Read all files from the given directory and generate the full list of (term-docID) pairs.
    This is done by tokenizing each word in a document, followed by stemming and case-folding.
@@ -16,10 +15,8 @@ The indexing phaae of the program does the following:
    in the Reuters dataset.
 2. Run the SPIMI-Invert function with the generated pairs and a specified memory limit. This 
    function constructs an index by creating a Python dictionary that maps a term to its 
-   postings list. The posting list is implemented as a set in this step, since we are only 
-   concerned with ensuring uniqueness of each posting. This allows efficient insertion and 
-   membership checking of all terms in each document. Whenever the memory limit is exceeded,
-   it will write the current index to disk by calling the write_block function.
+   postings list. Whenever the memory limit is exceeded, it will write the current index to
+   disk by calling the write_block function.
 3. The write_block function converts the posting set into a sorted list and stores the entry
    in the index as a tab separated pair between the term and its posting list. The posting 
    list is stored as a comma separated string.
@@ -27,8 +24,9 @@ The indexing phaae of the program does the following:
    This is done by reading all of the block files and doing an n-way merge, where n is the 
    number of block files. This is done by using a minimum priority queue of size n, sorted
    in lexicographical order. If a duplicate term is encountered, we will merge the posting
-   lists together.
-4. The final dictionary and postings are written to their respective files using pickle.
+   lists together before writing it to disk using pickle.
+4. Once all the blocks have been written, the final dictionary will also be written to disk
+   using pickle.
 
 The search phase of the program does the following:
 
@@ -44,16 +42,18 @@ search process:
    stores whether it is a negated search term, using the boolean attribute is_neg.
    Delaying the evaluation of NOT queries also allows us to introduce a few more
    optimisations in the next step.
-2. Use De Morgan's Law where applicable to maximise the number of AND queries. This is
-   done by applying it in the following cases:
+2. Use De Morgan's Law where applicable to maximise the number of AND queries, since we
+   can use skip pointers to speed up the queries and avoid computing the universe posting
+   list. This is done by applying it in the following cases:
    - NOT X AND NOT Y -> NOT (X OR  Y)
    - NOT X OR  NOT Y -> NOT (X AND Y)
    - NOT X OR  Y     -> NOT (X AND NOT Y) and vice versa
-3. Introduce a heap to keep track of the current chain of AND queries. This will delay
-   the evaluation of AND queries until the query processing is done, or a different
-   boolean operation is processed. After this the operands in the AND heap are all
-   evaluated in ascending order of term frequency, and the result is pushed onto the
-   results stack before subsequent operations are processed.
+3. Introduce an AndHeap class to store sequential AND queries. This class contains a min
+   heap that stores operands for the AND query, sorting them based on the term frequency.
+   This will delay the evaluation of AND queries until it is necessary to do so.
+   When this occurs, the operands in the AND heap are all evaluated in ascending order of
+   their term frequency, and the result is pushed onto the results stack before subsequent
+   operations are processed.
 4. Do not load the universe set of postings until it is necessary. With the previous
    optimisations, this is left to the end of the evaluation, where if the term is
    a negative term, we will load the universe set to get the result.

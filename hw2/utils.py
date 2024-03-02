@@ -60,6 +60,10 @@ class Operand:
         return self.postings
 
 class AndHeap:
+    """
+    Stores a heap of terms included in a chained AND query and sorts them in order
+    of term frequency.
+    """
     heap: list[tuple[int, Operand]]
     is_neg: bool
 

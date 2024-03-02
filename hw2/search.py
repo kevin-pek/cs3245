@@ -10,45 +10,47 @@ import time
 def evaluate(postfix: list[str], index: InvertedIndex) -> LinkedList | None:
     results = [] # store intermediate results in a stack
     for token in postfix:
-        op = None
+        op = None # operand to be pushed to the intermediate results stack
         if token == 'AND':
             op1 = results.pop()
             op2 = results.pop()
+            # if both operands are part of chained AND queries join them together
             if isinstance(op1, AndHeap) and isinstance(op2, AndHeap):
                 op = AndHeap()
                 op.add(op1.evaluate(index), index)
                 op.add(op2.evaluate(index), index)
-            elif isinstance(op1, AndHeap):
+            elif isinstance(op1, AndHeap): # if 1 of the operands is a heap add the other in
                 op1.add(op2, index)
                 op = op1
             elif isinstance(op2, AndHeap):
                 op2.add(op1, index)
                 op = op2
-            else: # otherwise we must evaluate the current heap and add its result
+            else: # if none are chained queries create a new AndHeap to store them
                 op = AndHeap()
                 op.add(op1, index)
                 op.add(op2, index)
         elif token == 'OR':
             op1 = results.pop()
             op2 = results.pop()
+
+            # if either operand is a chained AND queries we evaluate their result first
+            # since they have higher precedence
             if isinstance(op1, AndHeap):
                 op1 = op1.evaluate(index)
             if isinstance(op2, AndHeap):
                 op2 = op2.evaluate(index)
 
             postings = None
-            if op1.is_neg or op2.is_neg: # apply De Morgan's Law if negative term is present
-                op1.is_neg = not op1.is_neg
-                op2.is_neg = not op2.is_neg
-
+            # apply the OR operation to get the new postings list
             if op1.is_neg and op2.is_neg: # NOT X OR NOT Y -> NOT (X AND Y)
                 postings = intersect(op1.get_postings(index), op2.get_postings(index))
             elif op1.is_neg: # NOT X OR Y -> NOT (X AND NOT Y)
-                postings = difference(op1.get_postings(index), op2.get_postings(index))
-            elif op2.is_neg: # X OR NOT Y -> NOT (NOT X AND Y)
                 postings = difference(op2.get_postings(index), op1.get_postings(index))
-            else:
+            elif op2.is_neg: # X OR NOT Y -> NOT (NOT X AND Y)
+                postings = difference(op1.get_postings(index), op2.get_postings(index))
+            else: # otherwise we join both postings as per normal
                 postings = union(op1.get_postings(index), op2.get_postings(index))
+
             op = Operand(is_neg=op1.is_neg or op2.is_neg, postings=postings)
         elif token == 'NOT':
             op = results.pop()
@@ -56,21 +58,20 @@ def evaluate(postfix: list[str], index: InvertedIndex) -> LinkedList | None:
         else:
             op = Operand(term=token)
         results.append(op)
-        print(f'{token}: STACK {results}')
-    if len(results) != 1: # final result must be single entry otherwise invalid query
+    # final result must be single entry otherwise we have an invalid query
+    if len(results) != 1:
         print(f'Invalid query processed, got final result {results}\n')
         return None
     res = results.pop()
     if isinstance(res, AndHeap):
         res = res.evaluate(index)
     if res:
-        if res.is_neg: # if final result has a NOT term, we will need to compute the universe
+        # if final result has a NOT term, we will need to compute the universe
+        if res.is_neg:
             postings = res.get_postings(index)
-            # print(f'Result posting: {postings}')
             res = difference(postings, index.get_universe())
         else:
             res = res.get_postings(index)
-    print(f'Query Result: {res}\n')
     return res
 
 def shunting_yard(query: str) -> list[str]:
@@ -81,7 +82,7 @@ def shunting_yard(query: str) -> list[str]:
         if c[0] == '(':
             ops.append(c[0]) # separate open parenthesis from search term
             token = c[1:]
-            if token in prec: # NOT query encountered
+            if token == 'NOT': # NOT query encountered
                 ops.append(token)
             else:
                 queue.append(process_word(token))
@@ -116,9 +117,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     start = time.time()
     query = f_query.readline()
     while query:
-        print(query.strip())
         postfix = shunting_yard(query.strip())
-        print(postfix)
         result = evaluate(postfix, index)
         if result:
             f_results.write(' '.join(map(str, result.to_list())))

@@ -3,7 +3,7 @@ import linecache
 import heapq
 import pickle
 import os
-from linkedlist import LinkedList
+from linkedlist import LinkedList, union
 
 class SPIMI:
     def __init__(self, blocks_path, memory_limit) -> None:
@@ -39,13 +39,13 @@ class SPIMI:
                 block.write('\n')
         block.close()
 
-    def read_block(self, file, line_no) -> tuple[str, set] | None:
+    def read_block(self, file, line_no) -> tuple[str, LinkedList] | None:
+        """Reads from the blockfile specified and returns the term-posting pair."""
         line = linecache.getline(os.path.join(self.blocks_path, file), line_no)
         if line:
             term, postings_str = line.strip().split('\t')
-            postings = set(map(int, postings_str.split(',')))
+            postings = LinkedList.from_list(list(map(int, postings_str.split(','))))
             return term, postings
-        print(f'Invalid entry at {file}, line {line_no}')
 
     def merge_blocks(self, out_dict: str, out_postings: str):
         """n-way merge for all blocks, writes merged index into dictionary and postings file."""
@@ -72,7 +72,7 @@ class SPIMI:
                 # load the duplicate term from its file and merge the posting lists
                 _, j, next_line_no = heapq.heappop(pq)
                 _, next_postings = self.read_block(files[j], next_line_no)
-                postings = postings | next_postings # join posting list
+                postings = union(postings, next_postings) # join posting list
 
                 # peek at next line in the file and push it to the heap
                 file_ptrs[j] += 1
@@ -84,7 +84,7 @@ class SPIMI:
             # write posting to disk
             offset = f_postings.tell() # calculate offset for current postings list
             dict[term] = (len(postings), offset)
-            pickle.dump(sorted(postings), f_postings)
+            pickle.dump(postings.to_list(), f_postings)
 
             # book keeping
             file_ptrs[i] += 1
@@ -92,8 +92,9 @@ class SPIMI:
             if new_line: # if there is still a next line, add it to the pq
                 new_term = new_line.strip().split('\t', 1)[0]
                 heapq.heappush(pq, (new_term, i, file_ptrs[i]))
+
+        # write dictionary to disk and close files
         f_postings.close()
         f_dict = open(out_dict, 'wb')
         pickle.dump(dict, f_dict)
         f_dict.close()
-
