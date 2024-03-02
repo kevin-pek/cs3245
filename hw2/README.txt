@@ -64,6 +64,7 @@ index.py         - Indexing phase
 search.py        - Searching phase
 linkedlist.py    - Implementation of LinkedList class and boolean operations
 preprocessing.py - Text processing functions
+spimi.py         - class for SPIMI functions used in indexing phase
 utils.py         - Contains Index, Operand and AndHeap class for processing boolean queries
 
 == Statement of individual work ==
