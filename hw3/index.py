@@ -5,7 +5,7 @@ import getopt
 import os
 import pickle
 
-from preprocessing import get_terms
+from utils import get_terms
 
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
@@ -51,8 +51,8 @@ def build_index(in_dir, out_dict, out_postings):
             pair = (id, freq[term])
             postings[term].add(pair)
 
+    dictionary: dict[str, tuple[int, int]] = {} # dictionary mapping term to (df, offset)
     with open(out_postings, 'wb') as p: # save postings file
-        dictionary: dict[str, tuple[int, int]] = {}
         for token in postings.keys():
             dictionary[token] = (len(postings[token]), p.tell())
             pickle.dump(sorted(postings[token]), p)

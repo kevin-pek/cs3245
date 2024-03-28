@@ -6,7 +6,7 @@ import getopt
 import math
 import pickle
 from collections import defaultdict
-from preprocessing import get_terms, normalize_vector
+from utils import get_terms, normalize_vector
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
