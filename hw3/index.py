@@ -4,9 +4,8 @@ import getopt
 import os
 import pickle
 import math
-import chardet
 from collections import defaultdict
-from preprocessing import get_terms
+from utils import get_terms
 
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
@@ -20,9 +19,8 @@ def build_index(in_dir, out_dict, out_postings):
     if in_dir[-1] != '/': # add trailing slash to dir if not present
         in_dir = in_dir + '/'
 
-    postings: dict[str, set[tuple[str, int]]] = {} # map each term to set containing (doc_id, tf) pairs
-    doc_lengths = defaultdict(float)
-    term_doc_freq = defaultdict(int)
+    postings: dict[str, set[tuple[str, float]]] = {} # map each term to set containing (doc_id, lnc) pairs
+    N = 0
 
     for filename in os.listdir(in_dir):
         filepath = os.path.join(in_dir, filename)
@@ -31,38 +29,31 @@ def build_index(in_dir, out_dict, out_postings):
             print(f'{filename} is not a file!')
             continue
 
-        try: # handle case where document name cannot be cast to integer
-            id = filename
-        except:
-            print(f'{filename} cannot be cast as integer, skipping file!')
-            continue
+        doc_id = filename
+        N += 1
 
-        with open(filepath, 'r', errors='replace') as file: # get list of terms from document
+        with open(filepath, 'r') as file: # get list of terms from document
             terms = get_terms(file.read())
 
-        freq: dict[str, int] = {}
-        for term in terms: # get term frequency for each term in current document
-            if term not in freq:
-                freq[term] = 0
+        # get term frequency for each term in current document
+        freq: dict[str, int] = defaultdict(int)
+        for term in terms:
             freq[term] += 1
-            term_doc_freq[term] += 1
 
-        for term in terms: # add term frequencies into global postings list
+        # calculate lnc weights for each term in document
+        term_freq = defaultdict(float)
+        for term, tf in freq.items():
+            term_freq[term] = 1 + math.log10(tf)
+        norm = math.sqrt(sum([x ** 2 for x in term_freq.values()]))
+        for term, w in term_freq.items():
+            lnc = w / norm if norm != 0 else 0
             if term not in postings:
                 postings[term] = set()
-            pair = (id, freq[term])
-            postings[term].add(pair)
+            postings[term].add((doc_id, lnc))
 
-    # Total number of documents
-    N = len(os.listdir(in_dir))
+    with open(f"doclen_{out_dict}", "wb") as dl:
+        pickle.dump(N, dl)
 
-    # Calculate TF-IDF and document vector lengths
-    for term, docs in postings.items():
-        idf = math.log10(N / term_doc_freq[term])
-        for i, (doc_id, tf) in enumerate(docs):
-            tf_idf = (1 + math.log10(tf)) * idf
-            doc_lengths[doc_id] += tf_idf ** 2
-            
     dictionary: dict[str, tuple[int, int]] = {} # dictionary mapping term to (df, offset)
     with open(out_postings, 'wb') as p: # save postings file
         for token in postings.keys():
@@ -71,9 +62,6 @@ def build_index(in_dir, out_dict, out_postings):
 
     with open(out_dict, 'wb') as d: # save dictionary file
         pickle.dump(dictionary, d)
-
-    with open(f"doclen_{out_dict}", 'wb') as dlen: # save document length file
-        pickle.dump(doc_lengths, dlen)
 
 input_directory = output_file_dictionary = output_file_postings = None
 
