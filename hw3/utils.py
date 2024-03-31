@@ -23,8 +23,7 @@ def normalize_vector(query, dictionary, N):
     for term in query:
         if term in dictionary:
             df = dictionary[term][0]
-            
-            idf = math.log(N / df, 10)
+            idf = math.log(N / df, 10) if df != 0 and N != 0 else 0
             tf = 1 + math.log(query.count(term), 10)
             tf_idf[term] = tf * idf
     

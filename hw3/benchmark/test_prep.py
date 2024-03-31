@@ -53,9 +53,9 @@ def extract_msmarco_docs(tsv_file_path):
                 print(f"Skipping row with unexpected format: {row}")
 
 # Paths to the input and output files
-queries_tsv_path = 'docleaderboard-queries.tsv'
+# queries_tsv_path = 'docleaderboard-queries.tsv'
 output_queries_txt_path = 'queries.txt'
-top100_tsv_path = 'docleaderboard-top100.tsv'
+# top100_tsv_path = 'docleaderboard-top100.tsv'
 expected_output_txt_path = 'expected_output.txt'
 tsv_file_path = 'msmarco-docs.tsv'  # Or wherever u put the .tsv
 
