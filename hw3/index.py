@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 import sys
 import getopt
-
 import os
 import pickle
-
-from utils import get_terms
+import math
+from collections import defaultdict
+from preprocessing import get_terms
 
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
@@ -20,7 +20,8 @@ def build_index(in_dir, out_dict, out_postings):
         in_dir = in_dir + '/'
 
     postings: dict[str, set[tuple[int, int]]] = {} # map each term to set containing (doc_id, tf) pairs
-    doc_lengths: dict[int, int] = {} # map each document id to its length
+    doc_lengths = defaultdict(float)
+    term_doc_freq = defaultdict(int)
 
     for filename in os.listdir(in_dir):
         filepath = os.path.join(in_dir, filename)
@@ -38,12 +39,12 @@ def build_index(in_dir, out_dict, out_postings):
         with open(filepath, 'r') as file: # get list of terms from document
             terms = get_terms(file.read())
 
-        doc_lengths[id] = len(terms)  # store document length for normalising search results later
         freq: dict[str, int] = {}
         for term in terms: # get term frequency for each term in current document
             if term not in freq:
                 freq[term] = 0
             freq[term] += 1
+            term_doc_freq[term] += 1
 
         for term in terms: # add term frequencies into global postings list
             if term not in postings:
@@ -51,6 +52,16 @@ def build_index(in_dir, out_dict, out_postings):
             pair = (id, freq[term])
             postings[term].add(pair)
 
+    # Total number of documents
+    N = len(os.listdir(in_dir))
+
+    # Calculate TF-IDF and document vector lengths
+    for term, docs in postings.items():
+        idf = math.log10(N / term_doc_freq[term])
+        for i, (doc_id, tf) in enumerate(docs):
+            tf_idf = (1 + math.log10(tf)) * idf
+            doc_lengths[doc_id] += tf_idf ** 2
+            
     dictionary: dict[str, tuple[int, int]] = {} # dictionary mapping term to (df, offset)
     with open(out_postings, 'wb') as p: # save postings file
         for token in postings.keys():
