@@ -38,8 +38,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     scores[doc_id] += weight * (1 + math.log(tf, 10))
             
             for doc_id in scores: # normalise the scores of each document
-                scores[doc_id] /= doc_lengths[doc_id]
-            
+                scores[doc_id] /= math.sqrt(doc_lengths[doc_id])
             ranked_docs = sorted(scores.items(), key=lambda x: (-x[1], x[0]))[:10]
             ranked_doc_ids = [str(doc_id) for doc_id, _ in ranked_docs]
             results.write(" ".join(ranked_doc_ids) + "\n")
