@@ -42,6 +42,15 @@ In search.py, we do the following:
 - Sort the documents to get the highest score followed by lexicographical order,
   and get the top 10 results.
 
+In benchmark/test_prep.py, we do the following:
+- Extract from msmarco-docs.tsv the url, title and body of each document, 
+  write them into a file and save the file into the data directory.
+- Extract from docleaderboard-queries.tsv the queries and write the queries line
+  by line into query.txt.
+- Extract from docleaderboard-top100.tsv the top 100 query responses and write
+  them into expected_output.txt seperated by whitespace, with every line being
+  the expected output of a new query.
+
 == Files included with this submission ==
 
 List the files in your submission here and provide a short 1 line
@@ -53,6 +62,13 @@ search.py - Searching phase
 utils.py  - contains the get_terms function to process a string document
   into a list of terms, and the normalise_vector function, which returns the
   normalised tf-idf vector based on the given query and dictionary.
+benchmark/test_prep.py  - contains 3 functions that extracts relevant 
+  rows of data from the .tsv files from the MS MARCO research dataset to our
+  desired format for processing. 
+benchmark/queries.txt - contains search queries extracted from MS MARCO's
+  leaderboard test queries
+benchmark/expected_output.txt - expected document ID output extracted from 
+  MS MARCO's top 100 most similar documents from the query
 
 == Statement of individual work ==
 
@@ -70,3 +86,5 @@ assignment, because of the following reason:
 == References ==
 
 https://www.rexegg.com/regex-quickstart.html - reference for regex used in index.py
+https://microsoft.github.io/msmarco/Datasets.html - source of benchmark dataset
+https://nlp.stanford.edu/IR-book/html/htmledition/document-and-query-weighting-schemes-1.html#:~:text=For%20example%2C%20a%20very%20standard,idf%20weighting%2C%20and%20cosine%20normalization - reference for lnc.ltc application
