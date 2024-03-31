@@ -4,6 +4,7 @@ import getopt
 import os
 import pickle
 import math
+import chardet
 from collections import defaultdict
 from preprocessing import get_terms
 
@@ -19,7 +20,7 @@ def build_index(in_dir, out_dict, out_postings):
     if in_dir[-1] != '/': # add trailing slash to dir if not present
         in_dir = in_dir + '/'
 
-    postings: dict[str, set[tuple[int, int]]] = {} # map each term to set containing (doc_id, tf) pairs
+    postings: dict[str, set[tuple[str, int]]] = {} # map each term to set containing (doc_id, tf) pairs
     doc_lengths = defaultdict(float)
     term_doc_freq = defaultdict(int)
 
@@ -31,12 +32,12 @@ def build_index(in_dir, out_dict, out_postings):
             continue
 
         try: # handle case where document name cannot be cast to integer
-            id = int(filename)
+            id = filename
         except:
             print(f'{filename} cannot be cast as integer, skipping file!')
             continue
 
-        with open(filepath, 'r') as file: # get list of terms from document
+        with open(filepath, 'r', errors='replace') as file: # get list of terms from document
             terms = get_terms(file.read())
 
         freq: dict[str, int] = {}
