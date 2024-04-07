@@ -3,6 +3,7 @@ import csv
 from nltk import sent_tokenize, word_tokenize, PorterStemmer
 import math
 from collections import defaultdict
+import pickle
 
 stemmer = PorterStemmer()
 
@@ -33,7 +34,7 @@ def normalize_vector(query, dictionary, N):
         return tf_idf
     return {term: weight / norm for term, weight in tf_idf.items()}
 
-def read_csv(file_path):
+def read_pkl_csv(file_path):
     documents = {}
     max_len = 2**31 - 1 # max len for c-long
     csv.field_size_limit(max_len) # bypass field limit for csv.DictReader
@@ -43,5 +44,17 @@ def read_csv(file_path):
             court = row['court']
             date_posted = row['date_posted']
             content = re.sub(r'\W+', ' ', row['content']).lower()
-            documents[row['document_id']] = {'court': court, 'date_posted': date_posted, 'content': content}
+            title = row['title']    # need to do further processing to seperate the case name from case identifier, and maybe do sth about chinese cases
+            documents[row['document_id']] = {'court': court, 'date_posted': date_posted, 'content': content, 'title': title}
+
+    # pickle documents dict
+    pkl_file_path = 'data/documents.pkl'
+    with open(pkl_file_path, 'wb') as pf:
+        pickle.dump(documents, pf)
+
+    return documents
+
+def load_pkl(pkl_file_path):
+    with open(pkl_file_path, 'rb') as pf:
+        documents = pickle.load(pf)
     return documents
