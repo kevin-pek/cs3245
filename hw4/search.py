@@ -1,14 +1,15 @@
 #!/usr/bin/python3
 
 import sys
-import getopt
 import pickle
 from collections import defaultdict
 from utils import get_terms, normalize_vector
 import heapq
+from query import process_query
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
+
 
 def run_search(dict_file, postings_file, queries_file, results_file):
     """
@@ -24,6 +25,11 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
     with open(queries_file, 'r') as queries, open(results_file, 'w') as results, open(postings_file, 'rb') as p:
         for query in queries:
+            terms, is_boolean, is_valid = process_query(query)
+            if not is_valid: # skip if query is invalid
+                results.write('\n')
+                continue
+            # TODO: Handle boolean retrieval and vector based retrieval logic separately
             query_terms = get_terms(query)
             query_vector = normalize_vector(query_terms, dictionary, N)
             scores = defaultdict(float)
