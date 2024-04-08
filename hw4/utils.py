@@ -34,7 +34,7 @@ def normalize_vector(query, dictionary, N):
         return tf_idf
     return {term: weight / norm for term, weight in tf_idf.items()}
 
-def read_pkl_csv(file_path):
+def read_csv(file_path):
     documents = {}
     max_len = 2**31 - 1 # max len for c-long
     csv.field_size_limit(max_len) # bypass field limit for csv.DictReader
@@ -46,7 +46,9 @@ def read_pkl_csv(file_path):
             content = re.sub(r'\W+', ' ', row['content']).lower()
             title = row['title']    # need to do further processing to seperate the case name from case identifier, and maybe do sth about chinese cases
             documents[row['document_id']] = {'court': court, 'date_posted': date_posted, 'content': content, 'title': title}
+    return documents
 
+def save_pkl(documents):
     # pickle documents dict
     pkl_file_path = 'data/documents.pkl'
     with open(pkl_file_path, 'wb') as pf:

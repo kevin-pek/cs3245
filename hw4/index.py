@@ -5,25 +5,25 @@ import os
 import pickle
 import math
 from collections import defaultdict
-from utils import get_terms
+from utils import get_terms, read_csv
 
 def usage():
-    print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
+    print("usage: " + sys.argv[0] + " -i dataset-csv-file -d dictionary-file -p postings-file")
 
-def build_index(in_dir, out_dict, out_postings):
+def build_index(in_file, out_dict, out_postings):
     """
-    build index from documents stored in the input directory,
+    build index from documents found in input file,
     then output the dictionary file and postings file
     """
     print('indexing...')
-    if in_dir[-1] != '/': # add trailing slash to dir if not present
-        in_dir = in_dir + '/'
+
+    documents = read_csv(in_file)
 
     postings: dict[str, set[tuple[str, float]]] = {} # map each term to set containing (doc_id, lnc) pairs
     N = 0
 
-    for filename in os.listdir(in_dir):
-        filepath = os.path.join(in_dir, filename)
+    for filename in os.listdir(in_file):
+        filepath = os.path.join(in_file, filename)
 
         if not os.path.isfile(filepath): # handle case where item is not a file
             print(f'{filename} is not a file!')
@@ -63,7 +63,7 @@ def build_index(in_dir, out_dict, out_postings):
     with open(out_dict, 'wb') as d: # save dictionary file
         pickle.dump(dictionary, d)
 
-input_directory = output_file_dictionary = output_file_postings = None
+input_file = output_file_dictionary = output_file_postings = None
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:')
@@ -73,7 +73,7 @@ except getopt.GetoptError:
 
 for o, a in opts:
     if o == '-i': # input directory
-        input_directory = a
+        input_file = a
     elif o == '-d': # dictionary file
         output_file_dictionary = a
     elif o == '-p': # postings file
@@ -81,8 +81,8 @@ for o, a in opts:
     else:
         assert False, "unhandled option"
 
-if input_directory == None or output_file_postings == None or output_file_dictionary == None:
+if input_file == None or output_file_postings == None or output_file_dictionary == None:
     usage()
     sys.exit(2)
 
-build_index(input_directory, output_file_dictionary, output_file_postings)
+build_index(input_file, output_file_dictionary, output_file_postings)
