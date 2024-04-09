@@ -3,14 +3,52 @@ Email(s): e0726456@u.nus.edu, e1324842@u.nus.edu
 
 == Python Version ==
 
-I'm using Python Version 3.10.12 for this assignment.
+We're using Python Version 3.10.12 for this assignment.
 
 == General Notes about this assignment ==
 
+In the indexing phase, we construct the usual dictionary and posting lists based
+on the vector space model. However we also include positional indices to allow
+for phrase queries, and also build zone and field indexes for case specific
+information.
+
+PREPROCESSING:
+- Zones are created for named entities that we identify in the contents.
+  Each document is given a zone `parties` for the parties involved in the case,
+  and `names` for all names identified in the case.
+- 
+
+In the searching phase, we first validate and determine the type of query that
+is given. If it is an invalid query we immediately skip the query. Boolean
+queries and freetext queries are handled seaparately.
+
+BOOLEAN QUERIES:
+- Our general approach for boolean queries is to handle phrase queries first,
+  followed by single terms in order of increasing document frequency. We stop
+  searching and return nothing immediately if there are no matches given.
+- Special handling is done to terms that match a regex for a date, year, names,
+  citations. These terms will search for documents through the `date`, `year`
+  `parties`, `names`, `citation` fields within our index to narrow our search.
+- When a boolean query is given we will begin with handling any phrase queries
+  as we expect them to yield a lesser number of results. Results are retrieved
+  through the positional index of the terms. At the same time we maintain a set
+  that keeps track of terms we have already retrieved.
+- If phrase queries have at least 
+
+FREETEXT QUERIES:
+
+
+QUERY REFINEMENT:
 
 
 == Files included with this submission ==
 
+index.py  - indexing phase
+utils.py  - contains get_terms function to process string to list of terms,
+            process_terms function to convert list of terms to processed form,
+            normalize_vector to do cosine normalisation for tf-idf vectors
+search.py - searching phase
+query.py  - contains process_query function to handle processing of queries
 
 
 == Statement of individual work ==

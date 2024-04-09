@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 
+import getopt
 import sys
 import pickle
 from collections import defaultdict
-from utils import get_terms, normalize_vector
+from utils.preprocessing import get_terms
+from utils.vector import normalise_vector
 import heapq
-from query import process_query
+from utils.query import process_query
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
@@ -31,7 +33,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 continue
             # TODO: Handle boolean retrieval and vector based retrieval logic separately
             query_terms = get_terms(query)
-            query_vector = normalize_vector(query_terms, dictionary, N)
+            query_vector = normalise_vector(query_terms, dictionary, N)
             scores = defaultdict(float)
             for term, wq in query_vector.items():
                 if term in dictionary:
@@ -44,7 +46,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
             ranked_doc_ids = [str(doc_id) for doc_id, _ in ranked_docs]
             results.write(" ".join(ranked_doc_ids) + "\n")
 
-dictionary_file = postings_file = file_of_queries = output_file_of_results = None
+dictionary_file = postings_file = file_of_queries = file_of_output = None
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'd:p:q:o:')
