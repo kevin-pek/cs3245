@@ -4,8 +4,10 @@ import getopt
 import os
 import pickle
 import math
+import csv
+import re
 from collections import defaultdict
-from utils import get_terms, read_csv
+from utils.preprocessing import get_terms
 
 def usage():
     print("usage: " + sys.argv[0] + " -i dataset-csv-file -d dictionary-file -p postings-file")
@@ -17,7 +19,13 @@ def build_index(in_file, out_dict, out_postings):
     """
     print('indexing...')
 
-    documents = read_csv(in_file)
+    with open(in_file, mode='r', encoding='utf-8') as f:
+        csv_reader = csv.DictReader(f)
+        for row in csv_reader:
+            court = row['court']
+            date_posted = row['date_posted']
+            content = re.sub(r'\W+', ' ', row['content']).lower()
+            title = row['title']    # need to do further processing to seperate the case name from case identifier, and maybe do sth about chinese cases
 
     postings: dict[str, set[tuple[str, float]]] = {} # map each term to set containing (doc_id, lnc) pairs
     N = 0
