@@ -20,3 +20,47 @@ def get_terms(document: str):
                 terms.append(stemmer.stem(word, to_lowercase=True))
     return terms
 
+def simplify_court(court):
+    court_abbreviations = {
+        'CA Supreme Court': 'SCR',
+        'Federal Court of Australia': 'FCA',
+        'HK Court of First Instance': 'CFI',
+        'HK High Court': 'HKHC',
+        'High Court of Australia': 'HCA',
+        'Industrial Relations Court of Australia': 'IRCA',
+        'NSW Administrative Decisions Tribunal (Trial)': 'NSWADT',
+        'NSW Children\'s Court': 'NSWCC',
+        'NSW Civil and Administrative Tribunal': 'NCAT',
+        'NSW Court of Appeal': 'NSWCA',
+        'NSW Court of Criminal Appeal': 'NSWCCA',
+        'NSW District Court': 'NSWDC',
+        'NSW Industrial Court': 'NSWIC',
+        'NSW Industrial Relations Commission': 'NSWIRC',
+        'NSW Land and Environment Court': 'NSWLEC',
+        'NSW Local Court': 'NSWLC',
+        'NSW Medical Tribunal': 'NSWMT',
+        'NSW Supreme Court': 'NSWSC',
+        'SG Court of Appeal': 'SGCA',
+        'SG District Court': 'SGDC',
+        'SG Family Court': 'SGFC',
+        'SG High Court': 'SGHC',
+        'SG Magistrates\' Court': 'SGMC',
+        'SG Privy Council': 'SGPC',
+        'Singapore International Commercial Court': 'SICC',
+        'UK Court of Appeal': 'EWCA',
+        'UK Crown Court': 'UKCC',
+        'UK High Court': 'EWHC',
+        'UK House of Lords': 'UKHL',
+        'UK Military Court': 'UKMC',
+        'UK Supreme Court': 'UKSC',
+    }
+    return court_abbreviations.get(court, court)
+
+def clean_content(text, keyword="supreme court of canada citation"):
+    # Find the position of the keyword in the text
+    pos = text.lower().find(keyword.lower())
+    # If the keyword is found, slice the text from the keyword onwards
+    if pos != -1:
+        return text[pos:]
+    else:
+        return text

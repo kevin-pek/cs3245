@@ -26,7 +26,7 @@ def read_pkl_csv(file_path: str) -> dict[str, list[str]]:
     return documents
 
 
-def load_pkl(pkl_file_path) -> dict[str, list[str]]:
+def load_pkl(pkl_file_path = 'data/documents.pkl') -> dict[str, list[str]]:
     """Load pickle file from filepath"""
     with open(pkl_file_path, 'rb') as pf:
         documents = pickle.load(pf)

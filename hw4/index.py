@@ -7,7 +7,8 @@ import math
 import csv
 import re
 from collections import defaultdict
-from utils.preprocessing import get_terms
+from utils.preprocessing import get_terms, simplify_court, clean_content
+from utils.file import read_pkl_csv, load_pkl
 
 def usage():
     print("usage: " + sys.argv[0] + " -i dataset-csv-file -d dictionary-file -p postings-file")
@@ -19,29 +20,28 @@ def build_index(in_file, out_dict, out_postings):
     """
     print('indexing...')
 
-    with open(in_file, mode='r', encoding='utf-8') as f:
-        csv_reader = csv.DictReader(f)
-        for row in csv_reader:
-            court = row['court']
-            date_posted = row['date_posted']
-            content = re.sub(r'\W+', ' ', row['content']).lower()
-            title = row['title']    # need to do further processing to seperate the case name from case identifier, and maybe do sth about chinese cases
+    file_path = 'data/documents.pkl'
+    if os.path.exists(file_path):
+        documents = load_pkl()
+    else:
+        documents = read_pkl_csv(in_file)
 
-    postings: dict[str, set[tuple[str, float]]] = {} # map each term to set containing (doc_id, lnc) pairs
+    postings: dict[str, set[tuple[int, float, tuple[str, str, str]]]] = {} # map each term to set containing (doc_id, lnc) pairs
     N = 0
 
-    for filename in os.listdir(in_file):
-        filepath = os.path.join(in_file, filename)
-
-        if not os.path.isfile(filepath): # handle case where item is not a file
-            print(f'{filename} is not a file!')
-            continue
-
-        doc_id = filename
+    for doc_id, doc_dict in documents.items():
         N += 1
+        # get & process the data
+        title = doc_dict['title']
+        date_posted = doc_dict['date_posted'].split()[0]
+        court = simplify_court(doc_dict['court'])
+        content = doc_dict['content']
 
-        with open(filepath, 'r') as file: # get list of terms from document
-            terms = get_terms(file.read())
+        if court == 'SCR':
+            content = clean_content(content)
+
+        # get list of terms from document content
+        terms = get_terms(content)
 
         # get term frequency for each term in current document
         freq: dict[str, int] = defaultdict(int)
@@ -57,7 +57,7 @@ def build_index(in_file, out_dict, out_postings):
             lnc = w / norm if norm != 0 else 0
             if term not in postings:
                 postings[term] = set()
-            postings[term].add((doc_id, lnc))
+            postings[term].add((doc_id, lnc, (title, date_posted, court)))
 
     with open(f"doclen_{out_dict}", "wb") as dl:
         pickle.dump(N, dl)
