@@ -2,19 +2,21 @@
 
 Most important
 SG Court of Appeal
-SG Privy Council
+SG High Court
 UK House of Lords
 UK Supreme Court
+UK Court of Appeal
 High Court of Australia
 CA Supreme Court
 
-?Important?
-SG High Court
+Niche but important
 Singapore International Commercial Court
+SG Privy Council
+
+Not too important
 HK High Court
 HK Court of First Instance
 UK Crown Court
-UK Court of Appeal
 UK High Court
 Federal Court of Australia
 NSW Court of Appeal
