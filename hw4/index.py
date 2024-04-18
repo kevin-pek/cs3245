@@ -37,7 +37,7 @@ def build_index(in_file, out_dict, out_postings):
         court = simplify_court(doc_dict['court'])
         content = doc_dict['content']
 
-        if court == 'SCR':
+        if court == 'SCR':      # This is because supreme court of canada have some unidentified characters before the start of the actual judgment
             content = clean_content(content)
 
         # get list of terms from document content
