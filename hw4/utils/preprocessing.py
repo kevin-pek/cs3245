@@ -9,17 +9,19 @@ index construction and query handling.
 stemmer = PorterStemmer()
 
 def get_terms(document: str):
-    stop_words = ['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court','version', 'case', 'court', 'statement', 'line', 'para', 'fact']    #not sure if useful, but added these common words to all judgments
+    stop_words = ['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
+                  'version', 'case', 'court', 'statement', 'line', 'para', 'fact']
     terms = []
     for sentence in sent_tokenize(document):
-        sentence = re.sub(r'[-/]', ' ', sentence) # split word based on hyphens and slashes
+        sentence = re.sub(r'[-/]', ' ', sentence)  # Split words based on hyphens and slashes
         for word in word_tokenize(sentence):
             # remove non alphanumeric character, but keep periods that are found
             # between 2 numbers as they are likely part of a decimal number
             word = re.sub(r'(?<!\d)\.(?!\d)|[^\w\d.]', '', word)
 
-            if word not in stop_words and word.isalnum():
-                terms.append(stemmer.stem(word, to_lowercase=True))
+            # Check if word is ASCII to ensure it's likely English
+            if word.isascii() and word not in stop_words and word.isalnum():
+                terms.append(stemmer.stem(word.lower()))
     return terms
 
 def simplify_court(court):
