@@ -13,7 +13,7 @@ def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
 
 
-def run_search(dict_file, postings_file, queries_file, results_file):
+def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf_threshold=0.1):
     """
     using the given dictionary file and postings file,
     perform searching on the given queries file and output the results to a file
@@ -36,15 +36,28 @@ def run_search(dict_file, postings_file, queries_file, results_file):
             query_vector = normalise_vector(query_terms, dictionary, N)
             scores = defaultdict(float)
             for term, wq in query_vector.items():
-                if term in dictionary:
+                if term in dictionary and wq >= tfidf_threshold:  # Apply TF-IDF thresholding
                     offset = dictionary[term][1]
                     p.seek(offset)
                     postings = pickle.load(p)
                     for doc_id, wd in postings:
                         scores[doc_id] += wd * wq
-            ranked_docs = heapq.nsmallest(10, scores.items(), key=lambda x: (-x[1], x[0]))
-            ranked_doc_ids = [str(doc_id) for doc_id, _ in ranked_docs]
+
+            min_heap = []
+            # early push to heap if heap is not full
+            for doc_id in scores:
+                if len(min_heap) < k:
+                    heapq.heappush(min_heap, (scores[doc_id], doc_id))
+                else:
+                    # Only push to heap if score is greater than the smallest score in the heap
+                    if scores[doc_id] > min_heap[0][0]:
+                        heapq.heappushpop(min_heap, (scores[doc_id], doc_id))
+
+            # Extract top-K results from the heap
+            ranked_docs = heapq.nlargest(k, min_heap)
+            ranked_doc_ids = [str(doc_id) for _, doc_id in ranked_docs]
             results.write(" ".join(ranked_doc_ids) + "\n")
+
 
 dictionary_file = postings_file = file_of_queries = file_of_output = None
 
