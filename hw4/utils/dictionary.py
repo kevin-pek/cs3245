@@ -15,27 +15,40 @@ class ZoneIndex():
         self.title_freq = {}
         self.posits = {}
         self.fields = {}
+        self.postings = {}
 
     def add_term(self, term: str, pos: int):
         if term not in self.freq:
             self.freq[term] = 0
         self.freq[term] += 1
+        if term not in self.fields:
+            self.fields[term] = 0
         self.fields[term] |= 0b00001
+        if term not in self.posits:
+            self.posits[term] = []
         self.posits[term].append(pos)
 
     def add_court(self, court: str):
+        if court not in self.fields:
+            self.fields[court] = 0
         self.fields[court] |= 0b00010
 
     def add_date(self, date: str):
+        if date not in self.fields:
+            self.fields[date] = 0
         self.fields[date] |= 0b00100
 
     def add_citation(self, citation: str):
+        if citation not in self.fields:
+            self.fields[citation] = 0
         self.fields[citation] |= 0b01000
 
     def add_title(self, title_term: str):
         if title_term not in self.title_freq:
             self.freq[title_term] = 0
         self.freq[title_term] += 1
+        if title_term not in self.fields:
+            self.fields[title_term] = 0
         self.fields[title_term] |= 0b10000
 
     def calculate_weights(self, doc_id: str):
@@ -52,13 +65,17 @@ class ZoneIndex():
             if term in tf_t:
                 wt = tf_t[term] / norm_t if norm_t != 0 else 0
                 del tf_t[term] # remove term from title dictionary so we wont need to add it later
-            self.postings[term].append((int(doc_id), wc, wt, self.fields[term], self.posits[term]))
+            if term not in self.postings:
+                self.postings[term] = []
+            positions = self.posits[term] if term in self.posits else []
+            self.postings[term].append((int(doc_id), wc, wt, self.fields[term], positions))
 
         # add the remaining terms found in title that were not in the content
         for term, w in tf_t.items():
             wt = w / norm_t if norm_t != 0 else 0
             if term not in self.postings:
-                self.postings[term].append((int(doc_id), 0, wt, self.fields[term], self.posits[term]))
+                self.postings[term] = []
+            self.postings[term].append((int(doc_id), 0, wt, self.fields[term], []))
 
         # clear memory for the current document too reduce memory usage
         self.freq = {}
@@ -85,6 +102,4 @@ class ZoneIndex():
                 dictionary[term] = (len(enc_postings), offset)
 
         compress_and_save_dict(dictionary, out_dict)
-
-
 

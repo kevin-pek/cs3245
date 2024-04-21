@@ -5,6 +5,7 @@ import sys
 import pickle
 from collections import defaultdict
 import heapq
+from hw4.utils.compression import load_dict, vb_decode
 
 from utils.preprocessing import get_terms
 from utils.vector import normalise_vector
@@ -23,8 +24,8 @@ def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf
     print('running search on the queries...')
 
     # Load dictionary and postings
-    with open(dict_file, 'rb') as d, open(f"{dict_file}_len", 'rb') as n:
-        dictionary = pickle.load(d)
+    dictionary = load_dict(dict_file)
+    with open(f"{dict_file}_len", 'rb') as n:
         N = pickle.load(n)
 
     with open(queries_file, 'r') as queries, open(results_file, 'w') as results, open(postings_file, 'rb') as p:
@@ -42,7 +43,12 @@ def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf
                     offset = dictionary[term][1]
                     p.seek(offset)
                     postings = pickle.load(p)
-                    for doc_id, w_c, w_t, fields, position_idx in postings:
+                    doc_id = 0 # accumulator for doc_id since it is stored using gap encoding
+                    # NOTE: Similar process needs to be done for interpreting postional index
+                    #       When handling phrase queries if we are dealing with boolean queries
+                    #       By passing it through gap_decode(vb_decode(position_idx))
+                    for enc_doc_id, w_c, w_t, fields, position_idx in postings:
+                        doc_id += vb_decode(enc_doc_id) # decode and add gap value to document id
                         scores[doc_id]['content'] += w_c * wq
                         scores[doc_id]['title'] += w_t * wq
 

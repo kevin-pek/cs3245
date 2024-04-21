@@ -3,8 +3,8 @@ import sys
 import getopt
 import os
 import pickle
-from hw4.utils.dictionary import ZoneIndex
-from utils.preprocessing import get_terms, get_title_terms, simplify_court, clean_content
+from utils.dictionary import ZoneIndex
+from utils.preprocessing import get_terms, simplify_court, clean_content
 from utils.file import read_pkl_csv, load_pkl
 
 def usage():
@@ -47,7 +47,7 @@ def build_index(in_file, out_dict, out_postings):
         index.add_date(date_posted)
         index.add_court(court)
         index.add_citation(case)
-        for term in get_title_terms(title):
+        for term in get_terms(title):
             index.add_title(term)
 
         index.calculate_weights(doc_id)
