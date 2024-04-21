@@ -23,7 +23,7 @@ def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf
     print('running search on the queries...')
 
     # Load dictionary and postings
-    with open(dict_file, 'rb') as d, open(f"doclen_{dict_file}", 'rb') as n:
+    with open(dict_file, 'rb') as d, open(f"{dict_file}_len", 'rb') as n:
         dictionary = pickle.load(d)
         N = pickle.load(n)
 

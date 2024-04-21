@@ -24,6 +24,13 @@ def get_terms(document: str):
                 terms.append(stemmer.stem(word.lower()))
     return terms
 
+def get_title_terms(title: str) -> list[str]:
+    terms = []
+    for word in word_tokenize(title):
+        if word.isascii() and word.isalnum():
+            terms.append(stemmer.stem(word.lower()))
+    return terms
+
 def simplify_court(court):
     court_abbreviations = {
         'CA Supreme Court': 'SCR',
