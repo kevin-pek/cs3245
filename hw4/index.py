@@ -3,10 +3,7 @@ import sys
 import getopt
 import os
 import pickle
-import math
-import csv
-import re
-from collections import defaultdict
+from hw4.utils.dictionary import ZoneIndex
 from utils.preprocessing import get_terms, simplify_court, clean_content
 from utils.file import read_pkl_csv, load_pkl
 
@@ -20,14 +17,15 @@ def build_index(in_file, out_dict, out_postings):
     """
     print('indexing...')
 
+    # TODO: Remove this after done with pickle file
     file_path = 'data/documents.pkl'
     if os.path.exists(file_path):
         documents = load_pkl()
     else:
         documents = read_pkl_csv(in_file)
 
-    postings: dict[str, set[tuple[int, float, tuple[str, str, str]]]] = {} # map each term to set containing (doc_id, lnc) pairs
     N = 0
+    index = ZoneIndex()
 
     for doc_id, doc_dict in documents.items():
         N += 1
@@ -36,6 +34,7 @@ def build_index(in_file, out_dict, out_postings):
         date_posted = doc_dict['date_posted'].split()[0]
         court = simplify_court(doc_dict['court'])
         content = doc_dict['content']
+        case = title # extract case id from case
 
         if court == 'SCR':      # This is because supreme court of canada have some unidentified characters before the start of the actual judgment
             content = clean_content(content)
@@ -44,32 +43,24 @@ def build_index(in_file, out_dict, out_postings):
         terms = get_terms(content)
 
         # get term frequency for each term in current document
-        freq: dict[str, int] = defaultdict(int)
+        pos = 0 # counter for positional index of term
         for term in terms:
-            freq[term] += 1
+            index.add_term(term, pos)
+            pos += 1
 
-        # calculate lnc weights for each term in document
-        term_freq = defaultdict(float)
-        for term, tf in freq.items():
-            term_freq[term] = 1 + math.log10(tf)
-        norm = math.sqrt(sum([x ** 2 for x in term_freq.values()]))
-        for term, w in term_freq.items():
-            lnc = w / norm if norm != 0 else 0
-            if term not in postings:
-                postings[term] = set()
-            postings[term].add((doc_id, lnc, (title, date_posted, court)))
+        index.add_date(date_posted)
+        index.add_court(court)
+        index.add_citation(case)
+        index.add_title(title)
+
+        index.calculate_weights(doc_id)
+
+    index.save(out_dict, out_postings)
 
     with open(f"doclen_{out_dict}", "wb") as dl:
+        # compression doesnt matter for this since its just a number
         pickle.dump(N, dl)
 
-    dictionary: dict[str, tuple[int, int]] = {} # dictionary mapping term to (df, offset)
-    with open(out_postings, 'wb') as p: # save postings file
-        for token in postings.keys():
-            dictionary[token] = (len(postings[token]), p.tell())
-            pickle.dump(sorted(postings[token]), p)
-
-    with open(out_dict, 'wb') as d: # save dictionary file
-        pickle.dump(dictionary, d)
 
 input_file = output_file_dictionary = output_file_postings = None
 

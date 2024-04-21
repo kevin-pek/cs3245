@@ -7,7 +7,7 @@ Functions to save and load files to/from disk, and compression techniques to
 reduce disk space usage.
 """
 
-def read_pkl_csv(file_path: str) -> dict[str, list[str]]:
+def read_pkl_csv(file_path: str) -> dict[str, dict[str, str | dict]]:
     documents = {}
     max_len = 2**31 - 1 # max len for c-long
     csv.field_size_limit(max_len) # bypass field limit for csv.DictReader
@@ -18,7 +18,7 @@ def read_pkl_csv(file_path: str) -> dict[str, list[str]]:
             date_posted = row['date_posted']
             content = re.sub(r'\W+', ' ', row['content']).lower()
             title = row['title']    # need to do further processing to seperate the case name from case identifier, and maybe do sth about chinese cases
-            documents[row['document_id']] = {'court': court, 'date_posted': date_posted, 'content': content, 'title': title}
+            documents[int(row['document_id'])] = {'court': court, 'date_posted': date_posted, 'content': content, 'title': title}
 
     pkl_file_path = 'data/documents.pkl'
     with open(pkl_file_path, 'wb') as pf:
