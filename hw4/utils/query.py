@@ -1,45 +1,4 @@
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-def test_process_query():
-    """
-    Runs a series of test cases for process_query.
-    To run this function run `pytest query.py -s -rP`.
-    """
-    test_queries = {
-        'quiet phone call': (['quiet', 'phone', 'call'], False, True),
-        '"fertility treatment" AND damages': (['fertility treatment', 'damages'], True, True),  # Valid Boolean
-        '"fertility treatment" "damages"': ([], True, False),  # Invalid: consecutive phrases without AND
-        '"fertility treatment" damage': ([], True, False),  # Invalid: phrase followed by term without AND
-        'AND quiet': ([], True, False),  # Invalid: AND at the start
-        'quiet AND': ([], True, False),  # Invalid: AND at the end
-        '"fertility treatment AND damages': ([], True, False),  # Invalid: unclosed quote
-        '"" empty': ([], True, False),  # Invalid: empty quote
-        'quiet AND phone AND call': (['quiet', 'phone', 'call'], True, True),  # Valid Boolean
-        'quiet phone': (['quiet', 'phone'], False, True),  # Valid free text
-        '"quiet phone" call': ([], True, False),  # Mix of boolean and free text
-        '"A quote "inside" another quote"': ([], True, False),  # Nested phrases
-        '   term1 term2    ': (['term1', 'term2'], False, True),  # Leading and trailing spaces
-        '"term1  AND    term2"': (['term1 AND term2'], True, True),  # Multiple consecutive spaces within a phrase
-        '"term1!" AND "term?2"': (['term1!', 'term?2'], True, True),  # Special characters
-        '"term"': (['term'], True, True),  # Single word with quotes
-        '"term1 AND term2"': (['term1 AND term2'], True, True),  # Boolean operator within quotes
-        '': ([], False, False),  # Empty query
-    }
-
-    for query, expected in test_queries.items():
-        result = process_query(query)
-        try:
-            if expected[2]:  # If the query is expected to be valid
-                assert result == expected
-            else:  # If the query is expected to be invalid
-                assert result[2] == expected[2]
-            logger.info(f"Test passed for query: {query}")
-        except AssertionError:
-            logger.error(f"Test failed for query: {query}")
-            logger.error(f"Expected: {expected}, Got: {result}")
+import unittest
 
 
 def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
@@ -116,3 +75,40 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     if not is_valid:
         print(f"Invalid query: {raw_query}")
     return terms, is_boolean, is_valid
+
+
+class TestProcessQuery(unittest.TestCase):
+    def test_process_query(self):
+        """Runs a series of test cases for process_query."""
+        test_queries = {
+            'quiet phone call': (['quiet', 'phone', 'call'], False, True),
+            '"fertility treatment" AND damages': (['fertility treatment', 'damages'], True, True),  # Valid Boolean
+            '"fertility treatment" "damages"': ([], True, False),  # Invalid: consecutive phrases without AND
+            '"fertility treatment" damage': ([], True, False),  # Invalid: phrase followed by term without AND
+            'AND quiet': ([], True, False),  # Invalid: AND at the start
+            'quiet AND': ([], True, False),  # Invalid: AND at the end
+            '"fertility treatment AND damages': ([], True, False),  # Invalid: unclosed quote
+            '"" empty': ([], True, False),  # Invalid: empty quote
+            'quiet AND phone AND call': (['quiet', 'phone', 'call'], True, True),  # Valid Boolean
+            'quiet phone': (['quiet', 'phone'], False, True),  # Valid free text
+            '"quiet phone" call': ([], True, False),  # Mix of boolean and free text
+            '"A quote "inside" another quote"': ([], True, False),  # Nested phrases
+            '   term1 term2    ': (['term1', 'term2'], False, True),  # Leading and trailing spaces
+            '"term1  AND    term2"': (['term1 AND term2'], True, True),  # Multiple consecutive spaces within a phrase
+            '"term1!" AND "term?2"': (['term1!', 'term?2'], True, True),  # Special characters
+            '"term"': (['term'], True, True),  # Single word with quotes
+            '"term1 AND term2"': (['term1 AND term2'], True, True),  # Boolean operator within quotes
+            '': ([], False, False),  # Empty query
+        }
+
+        for query, expected in test_queries.items():
+            with self.subTest(query=query):
+                result = process_query(query)
+                if expected[2]:  # if the query is expected to be valid
+                    self.assertEqual(result, expected, f"Failed for query: {query}")
+                else:  # if the query is expected to be invalid
+                    self.assertEqual(result[2], expected[2], f"Failed for query: {query}")
+
+
+if __name__ == '__main__':
+    unittest.main()
