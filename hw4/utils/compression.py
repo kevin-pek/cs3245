@@ -1,3 +1,4 @@
+import os
 import unittest
 import pickle
 
@@ -54,8 +55,48 @@ def gap_decode(num_list: list[int]) -> list[int]:
     return nums
 
 
+def compress_and_save_dict(dictionary: dict[str, tuple[int, int]], out_dict: str):
+    """Save dictionary terms as a string in a separate file with frontcoding."""
+    with open(out_dict, "wb") as d, open(f"{out_dict}_str", "w") as ds:
+        terms = sorted(dictionary.keys())
+        prev = terms[0]
+        dict_entries = [dictionary[terms[0]]]
+        ds.write(f"0:{prev}\n")
+        for term in terms[1:]:
+            prefix_len = 0
+            for i in range(min(len(prev), len(term))):
+                if term[i] != prev[i]:
+                    break
+                prefix_len += 1
+            suffix = term[prefix_len:]
+            ds.write(f"{prefix_len}:{suffix}\n") # each new term begins at "0"
+            df, offset = dictionary[term]
+            dict_entries.append((df, offset))
+            prev = term
+        # save list of dictionary entries without the terms in a separate file
+        pickle.dump(dict_entries, d)
+
+
+def load_dict(dict_file: str) -> dict[str, tuple[int, int]]:
+    with open(dict_file, "rb") as d, open(f"{dict_file}_str", "r") as ds:
+        index = {}
+        prev = ""
+        for entry in pickle.load(d):
+            df, posting_offset = entry
+            line = ds.readline().strip()
+            prefix_len_str, suffix = line.split(":")
+            prefix_len = int(prefix_len_str)
+            if prefix_len == 0: # if prefix len is 0 we have a full term
+                term = suffix
+            else: # otherwise we add the suffix to the common prefix of the previous term
+                term = prev[:prefix_len] + suffix
+            index[term] = (df, posting_offset)
+            prev = term
+    return index
+
+
 # TESTS FOR GAP AND VARIABLE BYTE ENCODING DECODING
-class TestEncodingDecoding(unittest.TestCase):
+class TestPostingCompression(unittest.TestCase):
     def test_vb_encode_decode(self):
         test_cases = [1, 127, 128, 300, 16384, 2097151, 268435455]
         for number in test_cases:
@@ -91,46 +132,25 @@ class TestEncodingDecoding(unittest.TestCase):
         self.assertEqual(decoded_numbers, numbers, "Failed combining variable and gap encoding")
 
 
+class TestDictionaryCompression(unittest.TestCase):
+    def setUp(self):
+        self.test_dict = {
+            'apple': (10, 100),
+            'applet': (5, 150),
+            'banana': (20, 200),
+            'band': (7, 250)
+        }
+        self.dict_file = 'test_dict'
 
-def compress_and_save_dict(dictionary: dict[str, tuple[int, int]], out_dict: str):
-    """Save dictionary terms as a string in a separate file with frontcoding."""
-    with open(out_dict, "wb") as d, open(f"{out_dict}_str", "w") as ds:
-        dict_entries = []
-        terms = sorted(dictionary.keys())
-        prev = terms[0]
-        ds.write(f"0:{prev}\n")
-        for term in terms[1:]:
-            prefix_len = 0
-            for i in range(min(len(prev), len(term))):
-                if term[i] != prev[i]:
-                    break
-                prefix_len += 1
-            suffix = term[prefix_len:]
-            ds.write(f"{prefix_len}:{suffix}\n") # each new term begins at "0"
-            prev = term
-            df, offset = dictionary[term]
-            dict_entries.append((df, offset))
-            del dictionary[term]
+    def tearDown(self):
+        os.remove(self.dict_file)
+        os.remove(f"{self.dict_file}_str")
 
-        # save list of dictionary entries without the terms in a separate file
-        pickle.dump(dict_entries, d)
-
-
-def load_dict(dict_file: str) -> dict[str, tuple[int, int]]:
-    with open(dict_file, "rb") as d, open(f"{dict_file}_str", "r") as ds:
-        index = {}
-        prev = ""
-        for entry in pickle.load(d):
-            df, posting_offset = entry
-            prefix_len_str, suffix = ds.readline().split(":")
-            prefix_len = int(prefix_len_str)
-            if prefix_len == 0: # if prefix len is 0 we have a full term
-                term = suffix
-            else: # otherwise we add the suffix to the common prefix of the previous term
-                term = prev[:prefix_len] + suffix
-            index[term] = (df, posting_offset)
-            prev = term
-    return index
+    def test_compress_and_load_dict(self):
+        compress_and_save_dict(self.test_dict, self.dict_file)
+        loaded_dict = load_dict(self.dict_file)
+        print(loaded_dict)
+        self.assertEqual(self.test_dict, loaded_dict, "Loaded dictionary should match the original")
 
 
 if __name__ == "__main__":
