@@ -4,10 +4,12 @@ import getopt
 import sys
 import pickle
 from collections import defaultdict
+import heapq
+
 from utils.preprocessing import get_terms
 from utils.vector import normalise_vector
-import heapq
 from utils.query import process_query
+from utils.scoring import calculate_score
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
@@ -34,24 +36,32 @@ def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf
             # TODO: Handle boolean retrieval and vector based retrieval logic separately
             query_terms = get_terms(query)
             query_vector = normalise_vector(query_terms, dictionary, N)
-            scores = defaultdict(float)
+            scores = defaultdict(lambda: defaultdict(float))
             for term, wq in query_vector.items():
                 if term in dictionary and wq >= tfidf_threshold:  # Apply TF-IDF thresholding
                     offset = dictionary[term][1]
                     p.seek(offset)
                     postings = pickle.load(p)
-                    for doc_id, wd in postings:
-                        scores[doc_id] += wd * wq
+                    for doc_id, w_c, w_t, fields, position_idx in postings:
+                        scores[doc_id]['content'] += w_c * wq
+                        scores[doc_id]['title'] += w_t * wq
+
+                        # TODO: handle fields & positional index
+                        scores[doc_id]['citation'] = None
+                        scores[doc_id]['date'] = None
+                        scores[doc_id]['court'] = None
+
 
             min_heap = []
             # early push to heap if heap is not full
-            for doc_id in scores:
+            for doc_id, components_scores in scores.items():
+                total_score = calculate_score(components_scores)  # Score each component according to their weights
                 if len(min_heap) < k:
-                    heapq.heappush(min_heap, (scores[doc_id], doc_id))
+                    heapq.heappush(min_heap, (total_score, doc_id))
                 else:
                     # Only push to heap if score is greater than the smallest score in the heap
-                    if scores[doc_id] > min_heap[0][0]:
-                        heapq.heappushpop(min_heap, (scores[doc_id], doc_id))
+                    if total_score > min_heap[0][0]:
+                        heapq.heappushpop(min_heap, (total_score, doc_id))
 
             # Extract top-K results from the heap
             ranked_docs = heapq.nlargest(k, min_heap)
