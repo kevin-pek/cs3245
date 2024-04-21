@@ -7,16 +7,30 @@ We're using Python Version 3.10.12 for this assignment.
 
 == General Notes about this assignment ==
 
-In the indexing phase, we construct the usual dictionary and posting lists based
+In the indexing phase, we construct the inverted index and posting list based
 on the vector space model. However we also include positional indices to allow
 for phrase queries, and also build zone and field indexes for case specific
 information.
 
-PREPROCESSING:
-- Zones are created for named entities that we identify in the contents.
-  Each document is given a zone `parties` for the parties involved in the case,
-  and `names` for all names identified in the case.
-- 
+INVERTED INDEX
+
+- Index maps terms to gap encoded posting list, with each posting being
+  represented by a tuple with the following data in sequence:
+   - variable & gap encoded doc_id
+   - tf-idf content weight w lnc weighing
+   - tf-idf title weight w lnc weighing
+   - fields byte representing presence of term in each zone/field of document
+   - gap & variable encoded positional list for term occurrences within document
+
+- Fields is a byte indicating zones/fields, title, citation, date, court, content
+    00001 - term appears in contents zone of the document
+    00010 - term appears in court field
+    00100 - term appears in date field
+    01000 - term appears in citation field
+    10000 - term appears in title zone
+  Note that a term can be present in multiple zones/fields at once so the fields
+  bit can have multiple 1s.
+
 
 In the searching phase, we first validate and determine the type of query that
 is given. If it is an invalid query we immediately skip the query. Boolean
