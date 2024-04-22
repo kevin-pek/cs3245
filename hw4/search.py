@@ -1,23 +1,19 @@
 #!/usr/bin/python3
 
 import getopt
-from io import BufferedReader
 import sys
 import pickle
 from collections import defaultdict
 import heapq
-from utils.boolean import process_boolean_term, process_phrase_query, intersect
 from utils.compression import gap_decode, load_dict, vb_decode
 from utils.preprocessing import get_terms
 from utils.vector import normalise_vector
-from utils.query import process_query
+from utils.query import process_query, process_boolean_query
 from utils.scoring import calculate_score
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
 
-def process_boolean_query(dictionary, terms, p: BufferedReader):
-    pass
 
 def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf_threshold=0.1):
     """
@@ -54,47 +50,7 @@ def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf
                 
             # TODO: Handle boolean retrieval and vector based retrieval logic separately
             if is_boolean:
-                processed_terms = [] # we initialise a heap to intersect in order of lowest df
-                for term in terms:
-                    if isinstance(term, list): # phrase query
-                        df_max = 0 # for phrase queries we use the term with lowest df
-                        for t in [process_term(t) for t in term]:
-                            df = dictionary[t][0]
-                            if df == 0: # if a phrase query term doesnt appear treat it as 0
-                                df_max = 0
-                                break
-                            df_max = max(df_max, df)
-                        if df_max == 0: # stop query processing if it does not even exist in dictionary
-                            processed_terms = []
-                            break
-                        processed_terms.append((df_max, term))
-                    else:
-                        term = process_term(term)
-                        if term in dictionary:
-                            processed_terms.append((dictionary[term][0], term))
-                        else:
-                            processed_terms = []
-                            break
-
-                if not processed_terms: # if we have no processed terms means no result
-                    results.write('\n')
-                    continue
-
-                # initialise results with the first item in processed term
-                processed_terms.sort()
-                term = processed_terms[0]
-                if isinstance(term, list):
-                    docs = process_phrase_query(dictionary, term, p)
-                else:
-                    docs = process_boolean_term(dictionary, term, p)
-
-                # do intersection in order of term document frequency
-                for df, term in processed_terms[1:]:
-                    if isinstance(term, list): # phrase query
-                        docs = intersect(docs, process_phrase_query(dictionary, term, p))
-                    else:
-                        docs = intersect(docs, process_boolean_term(dictionary, term, p))
-
+                docs = process_boolean_query(dictionary, terms, p)
                 results.write(' '.join(docs) + '\n')
             else:
                 query_terms = get_terms(query)

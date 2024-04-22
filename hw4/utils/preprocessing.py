@@ -7,22 +7,30 @@ index construction and query handling.
 """
 
 stemmer = PorterStemmer()
+stop_words = ['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
+              'version', 'case', 'court', 'statement', 'line', 'para', 'fact']
+
+
+def process_term(word: str):
+    # remove non alphanumeric character, but keep periods that are found
+    # between 2 numbers as they are likely part of a decimal number
+    word = re.sub(r'(?<!\d)\.(?!\d)|[^\w\d.]', '', word)
+
+    # Check if word is ASCII to ensure it's likely English
+    if word.isascii() and word not in stop_words and word.isalnum():
+        return stemmer.stem(word.lower())
+
 
 def get_terms(document: str):
-    stop_words = ['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
-                  'version', 'case', 'court', 'statement', 'line', 'para', 'fact']
     terms = []
     for sentence in sent_tokenize(document):
         sentence = re.sub(r'[-/]', ' ', sentence)  # Split words based on hyphens and slashes
         for word in word_tokenize(sentence):
-            # remove non alphanumeric character, but keep periods that are found
-            # between 2 numbers as they are likely part of a decimal number
-            word = re.sub(r'(?<!\d)\.(?!\d)|[^\w\d.]', '', word)
-
-            # Check if word is ASCII to ensure it's likely English
-            if word.isascii() and word not in stop_words and word.isalnum():
-                terms.append(stemmer.stem(word.lower()))
+            term = process_term(word)
+            if term:
+                terms.append(term)
     return terms
+
 
 def simplify_court(court):
     court_abbreviations = {
@@ -59,6 +67,7 @@ def simplify_court(court):
         'UK Supreme Court': 'UKSC',
     }
     return court_abbreviations.get(court, court)
+
 
 def clean_content(text, keyword="supreme court of canada citation"):
     # Find the position of the keyword in the text
@@ -124,6 +133,7 @@ def extract_citations(case_title, is_query = True):
         return case_title.strip(), []
 
     return case_name, list(set(citations)) # Remove duplicates
+
 
 def test_extract_citations(): # for testing purposes
     test_cases = [
@@ -217,3 +227,4 @@ def extract_date(query, is_query = True):
             continue
         return year, month_day
     return None, None
+

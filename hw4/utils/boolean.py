@@ -1,6 +1,7 @@
 import pickle
 from utils.compression import gap_decode, vb_decode
 
+
 def intersect(p1, p2):
     i, j = 0, 0
     results = []
@@ -14,6 +15,7 @@ def intersect(p1, p2):
         else:
             j += 1
     return results
+
 
 def intersect_consecutive(p1, p2):
     """Returns positions in p2 that are directly follow from positions in p1."""
@@ -30,7 +32,8 @@ def intersect_consecutive(p1, p2):
             j += 1
     return results
 
-def process_phrase_query(dictionary, terms, p):
+
+def process_phrase_term(dictionary, terms, p):
     if not terms:
         return []
 
@@ -58,6 +61,7 @@ def process_phrase_query(dictionary, terms, p):
                 else:
                     del acc[doc_id]
     return sorted(acc.keys())
+
 
 def process_boolean_term(dictionary, term, p):
     p.seek(dictionary[term][1])

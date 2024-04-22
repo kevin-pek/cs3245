@@ -1,5 +1,8 @@
 import unittest
-from utils.preprocessing import extract_citations, extract_date
+from io import BufferedReader
+from utils.boolean import process_boolean_term, process_phrase_term, intersect
+from utils.preprocessing import process_term, extract_citations, extract_date
+
 
 def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     """
@@ -79,6 +82,49 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     if not is_valid:
         print(f"Invalid query: {raw_query}")
     return terms, year, month_day, is_boolean, is_valid, citation
+
+
+def process_boolean_query(dictionary, terms, p: BufferedReader):
+    processed_terms = [] # we initialise a heap to intersect in order of lowest df
+    for term in terms:
+        if isinstance(term, list): # phrase query
+            df_max = 0 # for phrase queries we use the term with lowest df
+            for t in [process_term(t) for t in term]:
+                df = dictionary[t][0]
+                if df == 0: # if a phrase query term doesnt appear treat it as 0
+                    df_max = 0
+                    break
+                df_max = max(df_max, df)
+            if df_max == 0: # stop query processing if it does not even exist in dictionary
+                processed_terms = []
+                break
+            processed_terms.append((df_max, term))
+        else:
+            term = process_term(term)
+            if term in dictionary:
+                processed_terms.append((dictionary[term][0], term))
+            else:
+                processed_terms = []
+                break
+
+    if not processed_terms: # if we have no processed terms means no result
+        return []
+
+    # initialise results with the first item in processed term
+    processed_terms.sort()
+    term = processed_terms[0]
+    if isinstance(term, list):
+        docs = process_phrase_term(dictionary, term, p)
+    else:
+        docs = process_boolean_term(dictionary, term, p)
+
+    # do intersection in order of term document frequency
+    for df, term in processed_terms[1:]:
+        if isinstance(term, list): # phrase query
+            docs = intersect(docs, process_phrase_term(dictionary, term, p))
+        else:
+            docs = intersect(docs, process_boolean_term(dictionary, term, p))
+    return docs
 
 
 class TestProcessQuery(unittest.TestCase):
