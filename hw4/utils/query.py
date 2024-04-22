@@ -48,7 +48,7 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
                 term = raw_terms[i]
             if not is_valid: # escape hatch for invalid queries
                 break
-            terms.append(' '.join(phrase))
+            terms.append(phrase)
         elif term == "AND":
             if is_freetext or i == 0 or i == len(raw_terms) - 1:
                 # if AND does not appear between 2 terms, invalid query
@@ -82,7 +82,7 @@ class TestProcessQuery(unittest.TestCase):
         """Runs a series of test cases for process_query."""
         test_queries = {
             'quiet phone call': (['quiet', 'phone', 'call'], False, True),
-            '"fertility treatment" AND damages': (['fertility treatment', 'damages'], True, True),  # Valid Boolean
+            '"fertility treatment" AND damages': ([['fertility', 'treatment'], 'damages'], True, True),  # Valid Boolean
             '"fertility treatment" "damages"': ([], True, False),  # Invalid: consecutive phrases without AND
             '"fertility treatment" damage': ([], True, False),  # Invalid: phrase followed by term without AND
             'AND quiet': ([], True, False),  # Invalid: AND at the start
@@ -94,10 +94,10 @@ class TestProcessQuery(unittest.TestCase):
             '"quiet phone" call': ([], True, False),  # Mix of boolean and free text
             '"A quote "inside" another quote"': ([], True, False),  # Nested phrases
             '   term1 term2    ': (['term1', 'term2'], False, True),  # Leading and trailing spaces
-            '"term1  AND    term2"': (['term1 AND term2'], True, True),  # Multiple consecutive spaces within a phrase
-            '"term1!" AND "term?2"': (['term1!', 'term?2'], True, True),  # Special characters
-            '"term"': (['term'], True, True),  # Single word with quotes
-            '"term1 AND term2"': (['term1 AND term2'], True, True),  # Boolean operator within quotes
+            '"term1  AND    term2"': ([['term1', 'AND', 'term2']], True, True),  # Multiple consecutive spaces within a phrase
+            '"term1!" AND "term?2"': ([['term1!'], ['term?2']], True, True),  # Special characters
+            '"term"': ([['term']], True, True),  # Single word with quotes
+            '"term1 AND term2"': ([['term1', 'AND', 'term2']], True, True),  # Boolean operator within quotes
             '': ([], False, False),  # Empty query
         }
 

@@ -32,7 +32,7 @@ def vb_encode(number: int) -> bytes:
     return byte_arr
 
 
-def vb_decode(byte_arr: bytes) -> list[int] | int:
+def vb_decode(byte_arr: bytes) -> list[int]:
     """Decode variable encoded bytes into original list of integers."""
     nums = []
     curr = 0
@@ -43,7 +43,7 @@ def vb_decode(byte_arr: bytes) -> list[int] | int:
             curr = 0
         else: # add the bits from the next byte to the number
             curr = (curr << 7) | (byte & 0x7F)
-    return nums if len(nums) > 0 else nums[0] # return number directly if theres only one
+    return nums # return number directly if theres only one
 
 
 def gap_decode(num_list: list[int]) -> list[int]:
@@ -104,8 +104,8 @@ class TestPostingCompression(unittest.TestCase):
                 encoded = vb_encode(number)
                 decoded = vb_decode(encoded)
                 print(f"EXPECTED: {number}")
-                print(f"RECEIVED: {decoded}")
-                self.assertEqual(decoded, number, "Failed variable byte encoding")
+                print(f"RECEIVED: {decoded[0]}")
+                self.assertEqual(decoded[0], number, "Failed variable byte encoding")
 
     def test_delta_encode_decode(self):
         test_cases = [
@@ -149,7 +149,8 @@ class TestDictionaryCompression(unittest.TestCase):
     def test_compress_and_load_dict(self):
         compress_and_save_dict(self.test_dict, self.dict_file)
         loaded_dict = load_dict(self.dict_file)
-        print(loaded_dict)
+        print("EXPECTED: ", self.test_dict)
+        print("RECEIVED: ", loaded_dict)
         self.assertEqual(self.test_dict, loaded_dict, "Loaded dictionary should match the original")
 
 
