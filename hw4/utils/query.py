@@ -1,5 +1,5 @@
 import unittest
-
+from utils.preprocessing import extract_citations
 
 def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     """
@@ -12,6 +12,9 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
      - is_boolean: bool, True if query is a boolean query, False if free text.
      - is_valid: bool, True if query is a valid.
     """
+    citation = extract_citations(raw_query)
+    if citation:
+        pass    #TODO implememnt code to fetch citation from dictionary
     raw_terms = raw_query.split()
     if not raw_terms:
         return [], False, False

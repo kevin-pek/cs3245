@@ -70,7 +70,7 @@ def clean_content(text, keyword="supreme court of canada citation"):
         return text
 
 
-def extract_citations(case_title):
+def extract_citations(case_title, query = True):
     patterns = [
         r"\[(\d{4})\] ([A-Z]+(?:\([A-Z]+\))? \d+)",     # Basic [YYYY] CourtAbbr Number
         r"\((\d{4})\) (\d+) ([A-Z]+ \d+)",               # (YYYY) Number CourtAbbr Number
@@ -80,8 +80,20 @@ def extract_citations(case_title):
         r"\[([\d]{4})\] (\d+ [A-Z]+(?:\([A-Z]+\))? \d+)"    # [YYYY] Number CourtAbbr Number, for non-English char
     ]
 
-    # start by finding the yyyy to split
-    split_position = re.search(r"\d{4}", case_title).start() - 2
+    if query: # For search queries
+        for pattern in patterns:
+            match = re.search(pattern, case_title)
+            if match:
+                return match.group(0).upper()  # return the first found citation
+        return None
+
+    # start by finding the yyyy 
+    year_match = re.search(r"\d{4}", case_title)
+    if not year_match:
+        return case_title.strip(), None 
+    
+    # Split title and citation
+    split_position = year_match.start() - 2
     case_name = case_title[:split_position].strip()
     citation_part = case_title[split_position:]
 
@@ -103,6 +115,10 @@ def extract_citations(case_title):
                 continue
 
             citations.append(matched.upper())
+
+    # Check for empty citation and return full case name if no citation is discovered
+    if not citations:
+        return case_title, None
 
     return case_name, list(set(citations)) # Remove duplicates
 

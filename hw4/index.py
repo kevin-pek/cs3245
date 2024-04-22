@@ -30,7 +30,7 @@ def build_index(in_file, out_dict, out_postings):
     for doc_id, doc_dict in documents.items():
         N += 1
         # get & process the data
-        title, citation = extract_citations(doc_dict['title'])
+        title, citation = extract_citations(doc_dict['title'], False)
         year_posted, date_posted = extract_date(doc_dict['date_posted'])
         court = simplify_court(doc_dict['court'])
         content = doc_dict['content']
