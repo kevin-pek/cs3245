@@ -4,7 +4,7 @@ import getopt
 import os
 import pickle
 from utils.dictionary import ZoneIndex
-from utils.preprocessing import get_terms, simplify_court, clean_content
+from utils.preprocessing import get_terms, simplify_court, extract_citations, extract_date, clean_content
 from utils.file import read_pkl_csv, load_pkl
 
 def usage():
@@ -30,11 +30,10 @@ def build_index(in_file, out_dict, out_postings):
     for doc_id, doc_dict in documents.items():
         N += 1
         # get & process the data
-        title = doc_dict['title']
-        date_posted = doc_dict['date_posted'].split()[0]
+        title, citation = extract_citations(doc_dict['title'])
+        year_posted, date_posted = extract_date(doc_dict['date_posted'])
         court = simplify_court(doc_dict['court'])
         content = doc_dict['content']
-        case = title # extract case id from case
 
         if court == 'SCR': # This is because supreme court of canada have some unidentified characters before the start of the actual judgment
             content = clean_content(content)
@@ -44,9 +43,10 @@ def build_index(in_file, out_dict, out_postings):
         for term in get_terms(content):
             index.add_term(term, pos)
             pos += 1
+        index.add_year(year_posted)
         index.add_date(date_posted)
         index.add_court(court)
-        index.add_citation(case)
+        index.add_citation(citation)
         for term in get_terms(title):
             index.add_title(term)
 

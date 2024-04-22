@@ -70,7 +70,7 @@ def clean_content(text, keyword="supreme court of canada citation"):
         return text
 
 
-def extract_citations(legal_case):
+def extract_citations(case_title):
     patterns = [
         r"\[(\d{4})\] ([A-Z]+(?:\([A-Z]+\))? \d+)",     # Basic [YYYY] CourtAbbr Number
         r"\((\d{4})\) (\d+) ([A-Z]+ \d+)",               # (YYYY) Number CourtAbbr Number
@@ -80,12 +80,10 @@ def extract_citations(legal_case):
         r"\[([\d]{4})\] (\d+ [A-Z]+(?:\([A-Z]+\))? \d+)"    # [YYYY] Number CourtAbbr Number, for non-English char
     ]
 
-    result = {}
-
     # start by finding the yyyy to split
-    split_position = re.search(r"\d{4}", legal_case).start() - 2
-    case_name = legal_case[:split_position].strip()
-    citation_part = legal_case[split_position:]
+    split_position = re.search(r"\d{4}", case_title).start() - 2
+    case_name = case_title[:split_position].strip()
+    citation_part = case_title[split_position:]
 
     citations = []
 
@@ -105,12 +103,8 @@ def extract_citations(legal_case):
                 continue
 
             citations.append(matched.upper())
-            
 
-    
-    result[case_name] = list(set(citations)) # Remove duplicates
-
-    return result
+    return case_name, list(set(citations)) # Remove duplicates
 
 def test_extract_citations(): # for testing purposes
     test_cases = [
@@ -154,3 +148,11 @@ def test_extract_citations(): # for testing purposes
         test_result = expected==extracted_citations
         if test_result == False:
             print(f"Case: {case}\nExpected: {expected}\nActual: {extracted_citations}\n")
+
+def extract_date(datetime):
+    year_date = datetime.split()[0].split('-')
+    year = int(year_date[0])
+    date = int(year_date[1] + year_date[2]) # month/day
+
+    return year, date
+    
