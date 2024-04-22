@@ -70,7 +70,7 @@ def clean_content(text, keyword="supreme court of canada citation"):
         return text
 
 
-def extract_citations(case_title, query = True):
+def extract_citations(case_title, is_query = True):
     patterns = [
         r"\[(\d{4})\] ([A-Z]+(?:\([A-Z]+\))? \d+)",     # Basic [YYYY] CourtAbbr Number
         r"\((\d{4})\) (\d+) ([A-Z]+ \d+)",               # (YYYY) Number CourtAbbr Number
@@ -80,17 +80,20 @@ def extract_citations(case_title, query = True):
         r"\[([\d]{4})\] (\d+ [A-Z]+(?:\([A-Z]+\))? \d+)"    # [YYYY] Number CourtAbbr Number, for non-English char
     ]
 
-    if query: # For search queries
+    if is_query: # For search queries
         for pattern in patterns:
             match = re.search(pattern, case_title)
             if match:
-                return match.group(0).upper()  # return the first found citation
-        return None
+                citation = match.group(0).upper()
+                # Remove the found citation from the original title
+                remainder = re.sub(pattern, '', case_title, count=1).strip()
+                return citation, remainder
+        return None, case_title
 
     # start by finding the yyyy 
     year_match = re.search(r"\d{4}", case_title)
     if not year_match:
-        return case_title.strip(), None 
+        return case_title.strip(), [] 
     
     # Split title and citation
     split_position = year_match.start() - 2
@@ -118,7 +121,7 @@ def extract_citations(case_title, query = True):
 
     # Check for empty citation and return full case name if no citation is discovered
     if not citations:
-        return case_title, None
+        return case_title.strip(), []
 
     return case_name, list(set(citations)) # Remove duplicates
 
@@ -165,10 +168,52 @@ def test_extract_citations(): # for testing purposes
         if test_result == False:
             print(f"Case: {case}\nExpected: {expected}\nActual: {extracted_citations}\n")
 
-def extract_date(datetime):
-    year_date = datetime.split()[0].split('-')
-    year = int(year_date[0])
-    date = int(year_date[1] + year_date[2]) # month/day
+def extract_date(query, is_query = True):
+    if not is_query:
+        year_date = query.split()[0].split('-')
+        year = int(year_date[0])
+        month_day = int(year_date[1] + year_date[2]) # month/day
 
-    return year, date
-    
+        return year, month_day
+        
+    date_patterns = [
+        r'\b(\d{4})/(\d{2})/(\d{2})\b',  # yyyy/mm/dd
+        r'\b(\d{2})/(\d{2})/(\d{4})\b',  # dd/mm/yyyy
+        r'\b(\d{4})-(\d{2})-(\d{2})\b',  # yyyy-mm-dd
+        r'\b(\d{2})-(\d{2})-(\d{4})\b',  # dd-mm-yyyy
+        r'\b(\d{4}) (\d{2}) (\d{2})\b',  # yyyy mm dd
+        r'\b(\d{2}) (\d{2}) (\d{4})\b',  # dd mm yyyy
+        r'\b(\d{4}):(\d{2}):(\d{2})\b',  # yyyy:mm:dd
+        r'\b(\d{2}):(\d{2}):(\d{4})\b',  # dd:mm:yyyy
+        r'\b(\d{4})\.(\d{2})\.(\d{2})\b', # yyyy.mm.dd
+        r'\b(\d{2})\.(\d{2})\.(\d{4})\b', # dd.mm.yyyy
+        r'\b(\d{4})\b'                    # yyyy
+    ]
+
+    # Combine all patterns into a single pattern
+    combined_pattern = '|'.join(date_patterns)
+
+    # Find all matches in the text
+    matches = re.findall(combined_pattern, query)
+    result = []
+    for match in matches:
+        # Flatten the tuple to remove empty strings
+        filtered_match = tuple(filter(None, match))
+        if len(filtered_match) == 1:
+            # only year
+            year = filtered_match[0]
+            month_day = None
+        elif len(filtered_match) == 3:
+            # year mth and day
+            if len(filtered_match[0]) == 4:  # Assumes yyyy first
+                year, month, day = filtered_match
+            else:  # Assumes dd first
+                day, month, year = filtered_match
+
+            if int(month) > int(day): # not sure how to determine mth vs day, doing this to get the most likely case where day > mth
+                month, day = day, month
+            month_day = int(month + day)
+        else:
+            continue
+        return year, month_day
+    return None, None

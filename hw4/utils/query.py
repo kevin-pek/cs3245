@@ -1,5 +1,5 @@
 import unittest
-from utils.preprocessing import extract_citations
+from utils.preprocessing import extract_citations, extract_date
 
 def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     """
@@ -11,10 +11,11 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
      - terms: list[str], List of string terms extracted from the query.
      - is_boolean: bool, True if query is a boolean query, False if free text.
      - is_valid: bool, True if query is a valid.
+     - citation: str, Case citation contained in the query.
     """
-    citation = extract_citations(raw_query)
-    if citation:
-        pass    #TODO implememnt code to fetch citation from dictionary
+    citation, raw_query = extract_citations(raw_query)
+
+    year, month_day = extract_date(raw_query)
     raw_terms = raw_query.split()
     if not raw_terms:
         return [], False, False
@@ -77,7 +78,7 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
         is_valid = False
     if not is_valid:
         print(f"Invalid query: {raw_query}")
-    return terms, is_boolean, is_valid
+    return terms, year, month_day, is_boolean, is_valid, citation
 
 
 class TestProcessQuery(unittest.TestCase):

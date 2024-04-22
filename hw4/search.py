@@ -29,16 +29,29 @@ def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf
     # Load dictionary and postings
     dictionary = load_dict(dict_file)
     print("Loaded Dictionary: ", dictionary)
-    with open(f"{dict_file}_len", 'rb') as n:
+
+    with open(f"working/{dict_file}_cit", 'rb') as ds:
+        citation_dict = pickle.load(ds)
+    print("Loaded Citation Dictionary")
+
+    with open(f"working/{dict_file}_len", 'rb') as n:
         N = pickle.load(n)
     print("Number of documents: ", N)
 
     with open(queries_file, 'r') as queries, open(results_file, 'w') as results, open(postings_file, 'rb') as p:
         for query in queries:
-            terms, is_boolean, is_valid = process_query(query)
+            terms, year, month_day, is_boolean, is_valid, citation = process_query(query)
+            if citation:
+                results.write(str(citation_dict[citation]) + ' ')
             if not is_valid: # skip if query is invalid
                 results.write('\n')
                 continue
+            if year:
+                if month_day:
+                    pass #TODO handle date retrieval with month and day
+                else:
+                    pass #TODO handle date retrieval with only year
+                
             # TODO: Handle boolean retrieval and vector based retrieval logic separately
             if is_boolean:
                 processed_terms = [] # we initialise a heap to intersect in order of lowest df

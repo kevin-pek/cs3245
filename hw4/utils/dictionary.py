@@ -23,7 +23,7 @@ class ZoneIndex():
         self.freq[term] += 1
         if term not in self.fields:
             self.fields[term] = 0
-        self.fields[term] |= 0b000001
+        self.fields[term] |= 0b00001
         if term not in self.posits:
             self.posits[term] = []
         self.posits[term].append(pos)
@@ -31,22 +31,17 @@ class ZoneIndex():
     def add_court(self, court: str):
         if court not in self.fields:
             self.fields[court] = 0
-        self.fields[court] |= 0b000010
+        self.fields[court] |= 0b00010
 
     def add_year(self, year: int):
         if year not in self.fields:
             self.fields[year] = 0
-        self.fields[year] |= 0b000100
+        self.fields[year] |= 0b00100
 
     def add_date(self, date: int):
         if date not in self.fields:
             self.fields[date] = 0
-        self.fields[date] |= 0b001000
-
-    def add_citation(self, citation: str):
-        if citation not in self.fields:
-            self.fields[citation] = 0
-        self.fields[citation] |= 0b010000
+        self.fields[date] |= 0b01000
 
     def add_title(self, title_term: str):
         if title_term not in self.title_freq:
@@ -54,7 +49,7 @@ class ZoneIndex():
         self.freq[title_term] += 1
         if title_term not in self.fields:
             self.fields[title_term] = 0
-        self.fields[title_term] |= 0b100000
+        self.fields[title_term] |= 0b10000
 
     def calculate_weights(self, doc_id: str):
         """Finalise the weights for a document by calculating the tf-idf weights

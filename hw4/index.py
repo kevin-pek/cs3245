@@ -23,15 +23,20 @@ def build_index(in_file, out_dict, out_postings):
         documents = load_pkl()
     else:
         documents = read_pkl_csv(in_file)
-
+        
+    if not os.path.exists('working'): # create a working dir if it doesnt exist
+        os.makedirs('working')
     N = 0 # number of documents in the entire collection
     index = ZoneIndex()
+    cit_dict = {} # Dictionary for citation
 
     for doc_id, doc_dict in documents.items():
         N += 1
         # get & process the data
-        title, citation = extract_citations(doc_dict['title'], False)
-        year_posted, date_posted = extract_date(doc_dict['date_posted'])
+        title, citations = extract_citations(doc_dict['title'], False)
+        for citation in citations:  
+            cit_dict[citation] = int(doc_id)
+        year_posted, date_posted = extract_date(doc_dict['date_posted'], False)
         court = simplify_court(doc_dict['court'])
         content = doc_dict['content']
 
@@ -46,15 +51,17 @@ def build_index(in_file, out_dict, out_postings):
         index.add_year(year_posted)
         index.add_date(date_posted)
         index.add_court(court)
-        index.add_citation(citation)
         for term in get_terms(title):
             index.add_title(term)
 
         index.calculate_weights(doc_id)
 
     index.save(out_dict, out_postings)
+    with open(f"working/{out_dict}_cit", "wb") as ds:
+        # compression not needed due to minimal memory usage
+        pickle.dump(cit_dict, ds)
 
-    with open(f"{out_dict}_len", "wb") as dl:
+    with open(f"working/{out_dict}_len", "wb") as dl:
         # compression doesnt matter for this since its just a number
         pickle.dump(N, dl)
 
