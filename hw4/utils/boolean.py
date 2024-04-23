@@ -72,4 +72,3 @@ def process_boolean_term(dictionary, term, p):
         doc_id += vb_decode(post[0])[0]
         docs.append(doc_id)
     return docs
-

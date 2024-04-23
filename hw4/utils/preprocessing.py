@@ -181,8 +181,8 @@ def test_extract_citations(): # for testing purposes
 def extract_date(query, is_query = True):
     if not is_query:
         year_date = query.split()[0].split('-')
-        year = int(year_date[0])
-        month_day = int(year_date[1] + year_date[2]) # month/day
+        year = year_date[0]
+        month_day = year_date[1] + year_date[2] # month/day
 
         return year, month_day
         

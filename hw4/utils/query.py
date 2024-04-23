@@ -86,6 +86,7 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
 
 def process_boolean_query(dictionary, terms, p: BufferedReader):
     processed_terms = [] # we initialise a heap to intersect in order of lowest df
+    
     for term in terms:
         if isinstance(term, list): # phrase query
             df_max = 0 # for phrase queries we use the term with lowest df
@@ -118,7 +119,6 @@ def process_boolean_query(dictionary, terms, p: BufferedReader):
         docs = process_phrase_term(dictionary, term, p)
     else:
         docs = process_boolean_term(dictionary, term, p)
-
     # do intersection in order of term document frequency
     for df, term in processed_terms[1:]:
         if isinstance(term, list): # phrase query
@@ -163,4 +163,3 @@ class TestProcessQuery(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

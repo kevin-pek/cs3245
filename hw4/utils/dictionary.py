@@ -33,12 +33,18 @@ class ZoneIndex():
             self.fields[court] = 0
         self.fields[court] |= 0b00010
 
-    def add_year(self, year: int):
+    def add_year(self, year: str):
+        if year not in self.title_freq:
+            self.freq[year] = 0
+        self.freq[year] += 1
         if year not in self.fields:
             self.fields[year] = 0
         self.fields[year] |= 0b00100
 
-    def add_date(self, date: int):
+    def add_date(self, date: str):
+        if date not in self.title_freq:
+            self.freq[date] = 0
+        self.freq[date] += 1
         if date not in self.fields:
             self.fields[date] = 0
         self.fields[date] |= 0b01000
