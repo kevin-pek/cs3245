@@ -24,7 +24,7 @@ def run_search(dict_file, postings_file, queries_file, results_file, k=10, tfidf
 
     # Load dictionary and postings
     dictionary = load_dict(dict_file)
-    print("Loaded Dictionary: ", dictionary)
+    print("Loaded Dictionary")
 
     with open(f"working/{dict_file}_cit", 'rb') as ds:
         citation_dict = pickle.load(ds)
