@@ -34,20 +34,26 @@ INVERTED INDEX
 
 In the searching phase, we first validate and determine the type of query that
 is given. If it is an invalid query we immediately skip the query. Boolean
-queries and freetext queries are handled seaparately.
+queries and freetext queries are handled separately.
+
+We first use regex to detect the presence of dates, years and citations within
+the search query. The presence of these will allow us to greatly narrow our
+search to specific years, dates or citations using specific fields.
+
+For years, dates, and courts, we use their corresponding fields to match the
+detected terms. For citations, we use the auxiliary index to map the case
+citation to the corresponding documents.
 
 BOOLEAN QUERIES:
-- Our general approach for boolean queries is to handle phrase queries first,
-  followed by single terms in order of increasing document frequency. We stop
-  searching and return nothing immediately if there are no matches given.
-- Special handling is done to terms that match a regex for a date, year, names,
-  citations. These terms will search for documents through the `date`, `year`
-  `parties`, `names`, `citation` fields within our index to narrow our search.
+- Our approach for boolean queries is to handle terms in order of increasing
+  document frequency. Phrase queries are sorted based on the largest document
+  frequency within the phrase, since that would be the performance bottleneck
+  during the searching process.
+- We stop searching and return nothing if there are no matches given for a term.
 - When a boolean query is given we will begin with handling any phrase queries
   as we expect them to yield a lesser number of results. Results are retrieved
   through the positional index of the terms. At the same time we maintain a set
   that keeps track of terms we have already retrieved.
-- If phrase queries have at least 
 
 FREETEXT QUERIES:
 
