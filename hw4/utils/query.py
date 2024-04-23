@@ -1,8 +1,14 @@
 import unittest
 from io import BufferedReader
+import nltk
+from nltk.corpus import wordnet
+
+
 from utils.boolean import process_boolean_term, process_phrase_term, intersect
 from utils.preprocessing import process_term, extract_citations, extract_date
 
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 
 def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     """
@@ -21,7 +27,7 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     year, month_day = extract_date(raw_query)
     raw_terms = raw_query.split()
     if not raw_terms:
-        return [], False, False
+        return [], year, month_day, False, False, citation
     is_boolean = False
     is_freetext = False
     is_valid = True
@@ -126,6 +132,24 @@ def process_boolean_query(dictionary, terms, p: BufferedReader):
         else:
             docs = intersect(docs, process_boolean_term(dictionary, term, p))
     return docs
+
+
+def query_expansion(query_terms):
+    expanded_query = set()
+    
+    for word in query_terms:
+        
+        for synset in wordnet.synsets(word):
+            # Add all lemmas of the synset
+            expanded_query.update([lemma.name() for lemma in synset.lemmas()])
+            
+            for hypernym in synset.hypernyms():
+                expanded_query.update([lemma.name() for lemma in hypernym.lemmas()])
+            for hyponym in synset.hyponyms():
+                expanded_query.update([lemma.name() for lemma in hyponym.lemmas()])
+                
+    return expanded_query
+
 
 
 class TestProcessQuery(unittest.TestCase):

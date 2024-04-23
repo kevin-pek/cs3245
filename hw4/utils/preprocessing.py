@@ -1,12 +1,13 @@
 import re
-from nltk import sent_tokenize, word_tokenize, PorterStemmer
+from nltk import sent_tokenize, word_tokenize
+from nltk.stem import WordNetLemmatizer
 
 """
 Functions to preprocess dataset and extract information from text to help with
 index construction and query handling.
 """
 
-stemmer = PorterStemmer()
+lemmatizer = WordNetLemmatizer()
 stop_words = ['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
               'version', 'case', 'court', 'statement', 'line', 'para', 'fact']
 
@@ -18,7 +19,7 @@ def process_term(word: str):
 
     # Check if word is ASCII to ensure it's likely English
     if word.isascii() and word not in stop_words and word.isalnum():
-        return stemmer.stem(word.lower())
+        return lemmatizer.lemmatize(word.lower())
 
 
 def get_terms(document: str):
