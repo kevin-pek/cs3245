@@ -2,3 +2,4 @@ data/
 venv/
 utils/__pycache__/
 test.ipynb
+*.txt
