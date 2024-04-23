@@ -94,15 +94,15 @@ class ZoneIndex():
         dictionary = {}
         with open(out_postings, "wb") as p:
             for term, posting_list in self.postings.items():
-                acc = 0
+                prev = 0
                 enc_postings = []
                 # sort the doc_id in ascending order for gap encoding
                 for posting in sorted(posting_list, key=lambda x: x[0]):
                     doc_id, wc, wt, fields, posits = posting
-                    acc = doc_id - acc # calculate gap from previous doc_id
-                    enc_doc_id = vb_encode(acc)
+                    enc_doc_id = vb_encode(doc_id - prev) # calculate gap from previous doc_id
                     enc_pos = bytes(byte for gap in gap_encode(posits) for byte in vb_encode(gap))
                     enc_postings.append((enc_doc_id, wc, wt, fields, enc_pos))
+                    prev = doc_id
                 offset = p.tell()
                 pickle.dump(enc_postings, p)
                 dictionary[term] = (len(enc_postings), offset)

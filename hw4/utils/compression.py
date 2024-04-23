@@ -22,7 +22,7 @@ def gap_encode(num_list: list[int]) -> list[int]:
 def vb_encode(number: int) -> bytes:
     """Encode number into byte array using variable encoding."""
     if number == 0:
-        return bytes([0])
+        return bytes([0 | 128])
     byte_arr = bytearray()
     while number > 0:
         byte_arr.append(number % 128)
@@ -98,7 +98,7 @@ def load_dict(dict_file: str) -> dict[str, tuple[int, int]]:
 # TESTS FOR GAP AND VARIABLE BYTE ENCODING DECODING
 class TestPostingCompression(unittest.TestCase):
     def test_vb_encode_decode(self):
-        test_cases = [1, 127, 128, 300, 16384, 2097151, 268435455]
+        test_cases = [0, 1, 127, 128, 300, 16384, 2097151, 268435455, 6927452]
         for number in test_cases:
             with self.subTest(number=number):
                 encoded = vb_encode(number)
@@ -107,9 +107,9 @@ class TestPostingCompression(unittest.TestCase):
                 print(f"RECEIVED: {decoded[0]}")
                 self.assertEqual(decoded[0], number, "Failed variable byte encoding")
 
-    def test_delta_encode_decode(self):
+    def test_gap_encode_decode(self):
         test_cases = [
-            [1, 2, 3, 4, 5],
+            [0, 1, 2, 3, 4, 5],
             [100, 105, 110, 115, 120],
             [1000, 1010, 1025, 1050, 1100]
         ]
@@ -121,8 +121,8 @@ class TestPostingCompression(unittest.TestCase):
                 print(f"RECEIVED: {decoded}")
                 self.assertEqual(decoded, numbers, "Failed gap encoding")
 
-    def test_combined_vb_delta_encode_decode(self):
-        numbers = [100, 228, 300, 23000, 23100]
+    def test_combined_vb_gap_encode_decode(self):
+        numbers = [0, 100, 228, 300, 23000, 23100]
         deltas = gap_encode(numbers)
         vb_encoded_deltas = bytes(b for delta in deltas for b in vb_encode(delta))
         vb_decoded_deltas = vb_decode(vb_encoded_deltas)
