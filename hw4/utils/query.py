@@ -89,8 +89,7 @@ def process_boolean_query(dictionary, terms, p: BufferedReader):
     for term in terms:
         if isinstance(term, list): # phrase query
             df_max = 0 # for phrase queries we use the term with lowest df
-            term = [process_term(t) for t in term]
-            for t in term:
+            for t in [process_term(t) for t in term]:
                 df = dictionary[t][0]
                 if df == 0: # if a phrase query term doesnt appear treat it as 0
                     df_max = 0
@@ -113,7 +112,7 @@ def process_boolean_query(dictionary, terms, p: BufferedReader):
 
     # initialise results with the first item in processed term
     processed_terms.sort()
-    term = processed_terms[0][1]
+    term = processed_terms[0]
     if isinstance(term, list):
         docs = process_phrase_term(dictionary, term, p)
     else:
