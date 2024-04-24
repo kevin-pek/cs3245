@@ -34,14 +34,19 @@ def build_index(in_file, out_dict, out_postings):
         N += 1
         # get & process the data
         title, citations = extract_citations(doc_dict['title'], False)
+
+        # process citation and date
         for citation in citations:  
             cit_dict[citation] = int(doc_id)
         year_posted, date_posted = extract_date(doc_dict['date_posted'], False)
-        court = simplify_court(doc_dict['court'])
-        content = doc_dict['content']
 
-        if court == 'SCR': # This is because supreme court of canada have some unidentified characters before the start of the actual judgment
+        # process court
+        court = doc_dict['court']
+        if court == 'CA Supreme Court': # This is because supreme court of canada have some unidentified characters before the start of the actual judgment
             content = clean_content(content)
+
+        court_id = simplify_court(court)
+        content = doc_dict['content']
 
         # get term frequency for each term in current document
         pos = 0 # counter for positional index of term
@@ -50,11 +55,11 @@ def build_index(in_file, out_dict, out_postings):
             pos += 1
         index.add_year(year_posted)
         index.add_date(date_posted)
-        index.add_court(court)
+        index.add_court(court_id)
         for term in get_terms(title):
             index.add_title(term)
 
-        index.calculate_weights(doc_id)
+        index.calculate_weights(doc_id, court_id)
 
     index.save(out_dict, out_postings)
     with open(f"working/{out_dict}_cit", "wb") as ds:

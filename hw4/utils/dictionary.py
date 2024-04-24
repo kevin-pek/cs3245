@@ -4,7 +4,7 @@ from utils.compression import compress_and_save_dict, gap_encode, vb_encode
 
 class ZoneIndex():
     """Inverted index that includes fields and zones within the dictionary"""
-    postings: dict[str, list[tuple[int, float, float, int, list[int]]]]
+    postings: dict[str, list[tuple[int, int, float, float, int, list[int]]]]
     freq: dict[str, int] # for term frequencies during the construction process
     title_freq: dict[str, int] # term frequency for title of case
     posits: dict[str, list[int]] # positional index for phrase queries
@@ -57,7 +57,7 @@ class ZoneIndex():
             self.fields[title_term] = 0
         self.fields[title_term] |= 0b10000
 
-    def calculate_weights(self, doc_id: str):
+    def calculate_weights(self, doc_id: str, court_id: int):
         """Finalise the weights for a document by calculating the tf-idf weights
         and posting list."""
         # calculate lnc weights for each term in document
@@ -74,14 +74,14 @@ class ZoneIndex():
             if term not in self.postings:
                 self.postings[term] = []
             positions = self.posits[term] if term in self.posits else []
-            self.postings[term].append((int(doc_id), wc, wt, self.fields[term], positions))
+            self.postings[term].append((int(doc_id), court_id, wc, wt, self.fields[term], positions))
 
         # add the remaining terms found in title that were not in the content
         for term, w in tf_t.items():
             wt = w / norm_t if norm_t != 0 else 0
             if term not in self.postings:
                 self.postings[term] = []
-            self.postings[term].append((int(doc_id), 0, wt, self.fields[term], []))
+            self.postings[term].append((int(doc_id), court_id, 0, wt, self.fields[term], []))
 
         # clear memory for the current document too reduce memory usage
         self.freq = {}

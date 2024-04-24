@@ -12,9 +12,6 @@ index construction and query handling.
 nltk.download('averaged_perceptron_tagger')
 
 lemmatizer = WordNetLemmatizer()
-stop_words = set(['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
-              'version', 'case', 'court', 'statement', 'line', 'para', 'fact', 'v'])
-nltk_stopwords = set(stopwords.words('english'))
 
 def convert_pos(tag):
     if tag.startswith('J'):
@@ -28,6 +25,9 @@ def convert_pos(tag):
     else:
         return wordnet.NOUN
 
+stop_words = ['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
+              'version', 'case', 'court', 'statement', 'line', 'para', 'fact']
+nltk_stopwords = set(stopwords.words('english'))
 
 def process_term(word: str, tag = 'N'): # treat word as noun by default
     # remove non alphanumeric character, but keep periods that are found
@@ -53,40 +53,44 @@ def get_terms(document: str):
 
 
 def simplify_court(court):
-    court_abbreviations = {
-        'CA Supreme Court': 'SCR',
-        'Federal Court of Australia': 'FCA',
-        'HK Court of First Instance': 'CFI',
-        'HK High Court': 'HKHC',
-        'High Court of Australia': 'HCA',
-        'Industrial Relations Court of Australia': 'IRCA',
-        'NSW Administrative Decisions Tribunal (Trial)': 'NSWADT',
-        'NSW Children\'s Court': 'NSWCC',
-        'NSW Civil and Administrative Tribunal': 'NCAT',
-        'NSW Court of Appeal': 'NSWCA',
-        'NSW Court of Criminal Appeal': 'NSWCCA',
-        'NSW District Court': 'NSWDC',
-        'NSW Industrial Court': 'NSWIC',
-        'NSW Industrial Relations Commission': 'NSWIRC',
-        'NSW Land and Environment Court': 'NSWLEC',
-        'NSW Local Court': 'NSWLC',
-        'NSW Medical Tribunal': 'NSWMT',
-        'NSW Supreme Court': 'NSWSC',
-        'SG Court of Appeal': 'SGCA',
-        'SG District Court': 'SGDC',
-        'SG Family Court': 'SGFC',
-        'SG High Court': 'SGHC',
-        'SG Magistrates\' Court': 'SGMC',
-        'SG Privy Council': 'SGPC',
-        'Singapore International Commercial Court': 'SICC',
-        'UK Court of Appeal': 'EWCA',
-        'UK Crown Court': 'UKCC',
-        'UK High Court': 'EWHC',
-        'UK House of Lords': 'UKHL',
-        'UK Military Court': 'UKMC',
-        'UK Supreme Court': 'UKSC',
+    court_dict = {
+    1: ['SG Court of Appeal', 'SGCA'],
+    2: ['SG High Court', 'SGHC'],
+    3: ['UK House of Lords', 'UKHL'],
+    4: ['UK Supreme Court', 'UKSC'],
+    5: ['UK Court of Appeal', 'EWCA'],
+    6: ['High Court of Australia', 'HCA'],
+    7: ['CA Supreme Court', 'SCR'],
+    8: ['NSW Supreme Court', 'NSWSC'],
+    9: ['Singapore International Commercial Court', 'SICC'],
+    10: ['SG Privy Council', 'SGPC'],
+    11: ['UK High Court', 'EWHC'],
+    12: ['Federal Court of Australia', 'FCA'],
+    13: ['NSW Court of Appeal', 'NSWCA'],
+    14: ['NSW Court of Criminal Appeal', 'NSWCCA'],
+    15: ['HK High Court', 'HKHC'],
+    16: ['HK Court of First Instance', 'CFI'],
+    17: ['UK Crown Court', 'UKCC'],
+    18: ['Industrial Relations Court of Australia', 'IRCA'],
+    19: ['NSW Administrative Decisions Tribunal (Trial)', 'NSWADT'],
+    20: ['NSW Children\'s Court', 'NSWCC'],
+    21: ['NSW Civil and Administrative Tribunal', 'NCAT'],
+    22: ['NSW District Court', 'NSWDC'],
+    23: ['NSW Industrial Court', 'NSWIC'],
+    24: ['NSW Industrial Relations Commission', 'NSWIRC'],
+    25: ['NSW Land and Environment Court', 'NSWLEC'],
+    26: ['NSW Local Court', 'NSWLC'],
+    27: ['NSW Medical Tribunal', 'NSWMT'],
+    28: ['SG District Court', 'SGDC'],
+    29: ['SG Family Court', 'SGFC'],
+    30: ['SG Magistrates\' Court', 'SGMC'],
+    31: ['UK Military Court', 'UKMC'],
     }
-    return court_abbreviations.get(court, court)
+
+    for key, value in court_dict.items():
+        if value[0] == court:
+            return key
+    return None 
 
 
 def clean_content(text, keyword="supreme court of canada citation"):

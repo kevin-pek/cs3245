@@ -19,7 +19,7 @@ def calculate_score(qv: dict[str, float], dictionary, p):
     return [(id, w['content'], w['title']) for id, w in scores.items()]
 
 
-def pagerank(docs_scores: list[tuple[int, float, float]], cit_match: int | None=None, date_matches: set[int] | None=None, year_matches: set[int] | None=None):
+def total_score(docs_scores: list[tuple[int, float, float]], cit_match: int | None=None, date_matches: set[int] | None=None, year_matches: set[int] | None=None):
     scores = {}
     for doc_id, w_c, w_t in docs_scores:
         # print(doc_id, w_c, w_t)
@@ -33,6 +33,6 @@ def pagerank(docs_scores: list[tuple[int, float, float]], cit_match: int | None=
         if score < 0.02: # threshold
             continue
         scores[doc_id] = score
-    # print("SCORES: ", sorted([(id, w) for id, w in scores.items()], key=lambda x: x[1], reverse=True))
+    print("SCORES: ", sorted([(id, w) for id, w in scores.items()], key=lambda x: x[1], reverse=True))
     return scores
 

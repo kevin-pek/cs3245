@@ -28,53 +28,54 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     raw_terms = raw_query.split()
     if not raw_terms:
         return [], year, month_day, False, False, citation
+    expanded_terms = query_expansion(raw_terms)
     is_boolean = False
     is_freetext = False
     is_valid = True
     i = 0
     terms = []
-    while i < len(raw_terms):
-        term = raw_terms[i]
+    while i < len(expanded_terms):
+        term = expanded_terms[i]
         if term[0] == '"': # start of phrase query
             if is_freetext or len(term) == 1 or term == '""':
                 # if term is single double quote or empty phrase, invalid query
                 is_valid = False
                 break
-            elif i > 0 and raw_terms[i - 1] != 'AND':
+            elif i > 0 and expanded_terms[i - 1] != 'AND':
                 # if not first term and not preceded by an AND, invalid query
                 is_valid = False
                 break
             is_boolean = True # phrase query only supported in boolean retrieval
             term = term[1:] # remove first double quote character from the word
             phrase = []
-            while i < len(raw_terms):
+            while i < len(expanded_terms):
                 if term[-1] == '"':
                     # end of phrase, add term without including the double quote
                     phrase.append(term[:-1])
                     break
-                elif i == len(raw_terms) - 1:
+                elif i == len(expanded_terms) - 1:
                     # if last term but phrase is not closed, invalid query
                     is_valid = False
                     break
                 phrase.append(term) # add term to phrase if not last term
                 i += 1
-                term = raw_terms[i]
+                term = expanded_terms[i]
             if not is_valid: # escape hatch for invalid queries
                 break
             terms.append(phrase)
         elif term == "AND":
-            if is_freetext or i == 0 or i == len(raw_terms) - 1:
+            if is_freetext or i == 0 or i == len(expanded_terms) - 1:
                 # if AND does not appear between 2 terms, invalid query
                 is_valid = False
                 break
-            elif raw_terms[i - 1] == 'AND':
+            elif expanded_terms[i - 1] == 'AND':
                 # if 2 consecutive ANDs appear, invalid query
                 is_valid = False
                 break
             is_boolean = True
         else:
             # single word term encountered
-            if not is_freetext and i > 0 and raw_terms[i - 1] != 'AND':
+            if not is_freetext and i > 0 and expanded_terms[i - 1] != 'AND':
                 # if 2 consecutive single terms are encountered, freetext
                 is_freetext = True
                 if is_boolean:
@@ -156,7 +157,7 @@ def query_expansion(query_terms):
             for hyponym in synset.hyponyms():
                 expanded_query.update([lemma.name() for lemma in hyponym.lemmas()])
     print("Expanded query: ", expanded_query)
-    return expanded_query
+    return list(expanded_query)
 
 
 

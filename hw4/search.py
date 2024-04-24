@@ -3,13 +3,12 @@
 import getopt
 import sys
 import pickle
-import heapq
 from utils.boolean import process_boolean_term, intersect
 from utils.compression import load_dict
 from utils.preprocessing import get_terms
 from utils.vector import normalise_vector
 from utils.query import process_query, process_boolean_query
-from utils.scoring import calculate_score, pagerank
+from utils.scoring import calculate_score, total_score
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
@@ -57,6 +56,10 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 date_matches = set(d[0] for d in process_boolean_term(dictionary, month_day, p, mask=0b01000))
                 # print("DATE MATCHES: ", date_matches)
 
+            if month_day in dictionary:
+                date_matches = set(d[0] for d in process_boolean_term(dictionary, month_day, p, mask=0b01000))
+                # print("DATE MATCHES: ", date_matches)
+
             if is_boolean:
                 docs_scores = process_boolean_query(dictionary, terms, p, N)
                 # print("DOCUMENTS: ", docs_scores)
@@ -71,7 +74,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 docs_scores = calculate_score(query_vector, dictionary, p)
                 # print("DOCUMENTS: ", docs_scores)
 
-            scores = pagerank(docs_scores, cit_match, year_matches, date_matches)
+            scores = total_score(docs_scores, cit_match, year_matches, date_matches)
             results.write(' '.join(str(id) for id, _ in sorted(scores.items(), key=lambda x: x[1], reverse=True)))
             # heap = []
             # for doc_id, components_scores in scores.items():
