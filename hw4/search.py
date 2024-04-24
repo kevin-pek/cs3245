@@ -71,7 +71,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 query_terms = get_terms(query)  # Extract terms from query
                 query_vector = normalise_vector(query_terms, dictionary, N)
                 # print("FREE TEXT: ", query_vector)
-                docs_scores = calculate_score(query_vector, court_id, dictionary, p)
+                docs_scores = calculate_score(query_vector, dictionary, p)
                 # print("DOCUMENTS: ", docs_scores)
 
             scores = total_score(docs_scores, cit_match, year_matches, date_matches)
