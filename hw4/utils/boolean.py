@@ -1,5 +1,8 @@
 import pickle
-from utils.compression import gap_decode, vb_decode
+import unittest
+import tempfile
+import os
+from utils.compression import gap_decode, vb_decode, vb_encode, gap_encode
 
 
 def intersect(p1, p2):
@@ -22,7 +25,7 @@ def intersect_consecutive(p1, p2):
     i, j = 0, 0
     results = []
     while i < len(p1) and j < len(p2):
-        if p1[i] - p2[j] == 1: # curr element in p2 directly follows from current element in p1
+        if p2[j] - p1[i] == 1: # curr element in p2 directly follows from current element in p1
             results.append(p2[j])
             i += 1
             j += 1
@@ -72,3 +75,34 @@ def process_boolean_term(dictionary, term, p):
         doc_id += vb_decode(post[0])[0]
         docs.append(doc_id)
     return docs
+
+
+class TestQuery(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp_file = tempfile.NamedTemporaryFile(delete=False)
+        postings = {
+            'apple': [(vb_encode(1), None, None, None, bytes(byte for gap in gap_encode([2, 6]) for byte in vb_encode(gap))), 
+                      (vb_encode(4), None, None, None, bytes(byte for gap in gap_encode([7]) for byte in vb_encode(gap)))],
+            'banana': [(vb_encode(1), None, None, None, bytes(byte for gap in gap_encode([4, 7]) for byte in vb_encode(gap))), 
+                       (vb_encode(4), None, None, None, bytes(byte for gap in gap_encode([8, 15]) for byte in vb_encode(gap)))],
+            'cherry': [(vb_encode(4), None, None, None, bytes(byte for gap in gap_encode([8, 10]) for byte in vb_encode(gap)))]
+        }
+        self.dictionary = {}
+        for term, data in postings.items():
+            offset = self.temp_file.tell()
+            pickle.dump(data, self.temp_file)
+            self.dictionary[term] = (len(data), offset)
+        self.temp_file.flush()
+
+    def tearDown(self) -> None:
+        self.temp_file.close()
+        os.remove(self.temp_file.name)
+
+    def test_phrase_queries(self):
+        with open(self.temp_file.name, 'rb') as f:
+            print(process_phrase_term(self.dictionary, ['apple', 'banana'], f))
+
+
+if __name__ == '__main__':
+    unittest.main()
+
