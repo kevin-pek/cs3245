@@ -39,7 +39,6 @@ def get_court_w(court_id):
     return court_w.get(court_id, 0)
 
 def calculate_score(qv: dict[str, float], dictionary, p):
-    
     scores = defaultdict(lambda: defaultdict(float))
     for term, wq in qv.items():
         if term in dictionary:
@@ -48,7 +47,7 @@ def calculate_score(qv: dict[str, float], dictionary, p):
             postings = pickle.load(p)
             doc_id = 0 # accumulator for doc_id since it is stored using gap encoding
             for enc_doc_id, court_id, w_c, w_t, fields, _, top_terms in postings:
-                court_score = get_court_w
+                court_score = get_court_w(court_id)
                 doc_id += vb_decode(enc_doc_id)[0] # decode and add gap value to document id
                 if fields & 0b10001: # only add weights if it has either content or title
                     scores[doc_id]['content'] += w_c * wq + court_score
