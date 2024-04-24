@@ -10,6 +10,7 @@ index construction and query handling.
 """
 
 nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
 
 lemmatizer = WordNetLemmatizer()
 
