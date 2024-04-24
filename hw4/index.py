@@ -4,7 +4,7 @@ import getopt
 import os
 import pickle
 from utils.dictionary import ZoneIndex
-from utils.preprocessing import get_terms, simplify_court, extract_citations, extract_date, clean_content
+from utils.preprocessing import get_terms, court_manipulation, extract_citations, extract_date, clean_content
 from utils.file import read_pkl_csv, load_pkl
 
 def usage():
@@ -45,7 +45,7 @@ def build_index(in_file, out_dict, out_postings):
         if court == 'CA Supreme Court': # This is because supreme court of canada have some unidentified characters before the start of the actual judgment
             content = clean_content(content)
 
-        court_id = simplify_court(court)
+        court_id = court_manipulation.simplify_court(court)
         content = doc_dict['content']
 
         # get term frequency for each term in current document

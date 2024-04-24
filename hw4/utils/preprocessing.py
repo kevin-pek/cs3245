@@ -102,7 +102,7 @@ class court_manipulation():
         for key, (court_name, abbreviation) in self.court_dict.items():
             # Check both court name and abbreviation for presence in the query string
             if court_name.lower() in normalized_query or abbreviation.lower() in normalized_query:
-                return key  # Return the dictionary key (index) where match is found
+                return key  # Return the dictionary doc_id where match is found
         
         return None  # If no match found, return None
 
