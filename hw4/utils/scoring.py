@@ -2,8 +2,44 @@ import pickle
 from collections import defaultdict
 from utils.compression import vb_decode
 
+def get_court_w():
+    court_w = {
+        1: 0.01,
+        2: 0.007,
+        3: 0.006,
+        4: 0.0057,
+        5: 0.0055,
+        6: 0.0055,
+        7: 0.0055,
+        8: 0.0055,
+        9: ['Singapore International Commercial Court', 'SICC'],
+        10: ['SG Privy Council', 'SGPC'],
+        11: ['UK High Court', 'EWHC'],
+        12: ['Federal Court of Australia', 'FCA'],
+        13: ['NSW Court of Appeal', 'NSWCA'],
+        14: ['NSW Court of Criminal Appeal', 'NSWCCA'],
+        15: ['HK High Court', 'HKHC'],
+        16: ['HK Court of First Instance', 'CFI'],
+        17: ['UK Crown Court', 'UKCC'],
+        18: ['Industrial Relations Court of Australia', 'IRCA'],
+        19: ['NSW Administrative Decisions Tribunal (Trial)', 'NSWADT'],
+        20: ['NSW Children\'s Court', 'NSWCC'],
+        21: ['NSW Civil and Administrative Tribunal', 'NCAT'],
+        22: ['NSW District Court', 'NSWDC'],
+        23: ['NSW Industrial Court', 'NSWIC'],
+        24: ['NSW Industrial Relations Commission', 'NSWIRC'],
+        25: ['NSW Land and Environment Court', 'NSWLEC'],
+        26: ['NSW Local Court', 'NSWLC'],
+        27: ['NSW Medical Tribunal', 'NSWMT'],
+        28: ['SG District Court', 'SGDC'],
+        29: ['SG Family Court', 'SGFC'],
+        30: ['SG Magistrates\' Court', 'SGMC'],
+        31: ['UK Military Court', 'UKMC'],
+    }
 
-def calculate_score(qv: dict[str, float], dictionary, p):
+
+def calculate_score(qv: dict[str, float], q_court_id, dictionary, p):
+    
     scores = defaultdict(lambda: defaultdict(float))
     for term, wq in qv.items():
         if term in dictionary:
@@ -11,7 +47,7 @@ def calculate_score(qv: dict[str, float], dictionary, p):
             p.seek(offset)
             postings = pickle.load(p)
             doc_id = 0 # accumulator for doc_id since it is stored using gap encoding
-            for enc_doc_id, w_c, w_t, fields, _ in postings:
+            for enc_doc_id, court_id, w_c, w_t, fields, _, top_terms in postings:
                 doc_id += vb_decode(enc_doc_id)[0] # decode and add gap value to document id
                 if fields & 0b10001: # only add weights if it has either content or title
                     scores[doc_id]['content'] += w_c * wq

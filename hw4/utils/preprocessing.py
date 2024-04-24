@@ -42,7 +42,7 @@ def get_terms(document: str):
     terms = []
     for sentence in sent_tokenize(document):
         # TODO: Some special handling for boolean queries that convert split words into phrase query
-        sentence = re.sub(r'[-/]', ' ', sentence)  # Split words based on hyphens and slashes
+        sentence = re.sub(r'[/]', ' ', sentence)  # Split words based on slashes
         tagged_words = pos_tag(word_tokenize(sentence))
         for word, tag in tagged_words:
             term = process_term(word, tag)

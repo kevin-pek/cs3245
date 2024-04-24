@@ -34,7 +34,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
     with open(queries_file, 'r') as queries, open(results_file, 'w') as results, open(postings_file, 'rb') as p:
         for query in queries:
-            terms, year, month_day, is_boolean, is_valid, citation = process_query(query)
+            terms, year, month_day, is_boolean, is_valid, citation, court_id = process_query(query)
 
             if not is_valid: # skip if query is invalid
                 results.write('\n')
@@ -71,7 +71,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 query_terms = get_terms(query)  # Extract terms from query
                 query_vector = normalise_vector(query_terms, dictionary, N)
                 # print("FREE TEXT: ", query_vector)
-                docs_scores = calculate_score(query_vector, dictionary, p)
+                docs_scores = calculate_score(query_vector, court_id, dictionary, p)
                 # print("DOCUMENTS: ", docs_scores)
 
             scores = total_score(docs_scores, cit_match, year_matches, date_matches)
