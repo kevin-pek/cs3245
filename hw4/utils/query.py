@@ -98,6 +98,9 @@ def process_boolean_query(dictionary, terms, p: BufferedReader):
             df_max = 0 # for phrase queries we use the term with lowest df
             term = [process_term(t) for t in term]
             for t in term:
+                if t not in dictionary:
+                    df_max = 0
+                    break
                 df = dictionary[t][0]
                 if df == 0: # if a phrase query term doesnt appear treat it as 0
                     df_max = 0
