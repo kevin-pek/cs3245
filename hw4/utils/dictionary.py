@@ -1,10 +1,11 @@
 import math
 import pickle
+import heapq
 from utils.compression import compress_and_save_dict, gap_encode, vb_encode
 
 class ZoneIndex():
     """Inverted index that includes fields and zones within the dictionary"""
-    postings: dict[str, list[tuple[int, int, float, float, int, list[int]]]]
+    postings: dict[str, list[tuple[int, int, float, float, int, list[int], list[str]]]]
     freq: dict[str, int] # for term frequencies during the construction process
     title_freq: dict[str, int] # term frequency for title of case
     posits: dict[str, list[int]] # positional index for phrase queries
@@ -57,9 +58,16 @@ class ZoneIndex():
             self.fields[title_term] = 0
         self.fields[title_term] |= 0b10000
 
-    def calculate_weights(self, doc_id: str, court_id: int):
+    def calculate_weights(self, doc_id: str, court_id: int, topk: int = 5):
         """Finalise the weights for a document by calculating the tf-idf weights
-        and posting list."""
+        and posting list, including top-k terms."""
+
+        # calculate combined frequency of terms & the list of top k terms
+        combined_freq = {term: self.freq.get(term, 0) + self.title_freq.get(term, 0)
+                         for term in set(self.freq) | set(self.title_freq)}
+        sorted_terms = sorted(combined_freq.items(), key=lambda x: x[1], reverse=True)
+        top_terms = [term for term, _ in sorted_terms[:topk]]
+
         # calculate lnc weights for each term in document
         tf_c = { term: 1 + math.log10(tf) for term, tf in self.freq.items() }
         norm_c = math.sqrt(sum(x ** 2 for x in tf_c.values()))
@@ -74,14 +82,14 @@ class ZoneIndex():
             if term not in self.postings:
                 self.postings[term] = []
             positions = self.posits[term] if term in self.posits else []
-            self.postings[term].append((int(doc_id), court_id, wc, wt, self.fields[term], positions))
+            self.postings[term].append((int(doc_id), court_id, wc, wt, self.fields[term], positions, top_terms))
 
         # add the remaining terms found in title that were not in the content
         for term, w in tf_t.items():
             wt = w / norm_t if norm_t != 0 else 0
             if term not in self.postings:
                 self.postings[term] = []
-            self.postings[term].append((int(doc_id), court_id, 0, wt, self.fields[term], []))
+            self.postings[term].append((int(doc_id), court_id, 0, wt, self.fields[term], [], top_terms))
 
         # clear memory for the current document too reduce memory usage
         self.freq = {}
@@ -98,10 +106,10 @@ class ZoneIndex():
                 enc_postings = []
                 # sort the doc_id in ascending order for gap encoding
                 for posting in sorted(posting_list, key=lambda x: x[0]):
-                    doc_id, wc, wt, fields, posits = posting
+                    doc_id, court_id, wc, wt, fields, posits, top_terms = posting
                     enc_doc_id = vb_encode(doc_id - prev) # calculate gap from previous doc_id
                     enc_pos = bytes(byte for gap in gap_encode(posits) for byte in vb_encode(gap))
-                    enc_postings.append((enc_doc_id, wc, wt, fields, enc_pos))
+                    enc_postings.append((enc_doc_id, court_id, wc, wt, fields, enc_pos, top_terms))
                     prev = doc_id
                 offset = p.tell()
                 pickle.dump(enc_postings, p)
