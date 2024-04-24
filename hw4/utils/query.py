@@ -26,7 +26,7 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
 
     year, month_day = extract_date(raw_query)
 
-    court_id = court_manipulation.extract_court(raw_query)
+    court_id = court_manipulation().extract_court(raw_query)
     
     raw_terms = raw_query.split()
     if not raw_terms:
@@ -147,9 +147,10 @@ def process_boolean_query(dictionary, terms, p: BufferedReader, N) -> list[tuple
 
 
 def query_expansion(query_terms):
-    expanded_query = set()
+    expanded_query = set(query_terms)
     
     for word in query_terms:
+        synsets = wordnet.synsets(word)[:5] 
         
         for synset in wordnet.synsets(word):
             # Add all lemmas of the synset

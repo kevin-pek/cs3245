@@ -44,8 +44,7 @@ def build_index(in_file, out_dict, out_postings):
         court = doc_dict['court']
         if court == 'CA Supreme Court': # This is because supreme court of canada have some unidentified characters before the start of the actual judgment
             content = clean_content(content)
-
-        court_id = court_manipulation.simplify_court(court)
+        court_id = court_manipulation().simplify_court(court)
         content = doc_dict['content']
 
         # get term frequency for each term in current document
