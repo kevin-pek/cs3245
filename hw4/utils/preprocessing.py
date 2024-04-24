@@ -27,7 +27,7 @@ def convert_pos(tag):
         return wordnet.NOUN
 
 stop_words = ['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
-              'version', 'case', 'court', 'statement', 'line', 'para', 'fact']
+              'version', 'case', 'court', 'statement', 'line', 'para', 'fact', 'v']
 nltk_stopwords = set(stopwords.words('english'))
 
 def process_term(word: str, tag = 'N'): # treat word as noun by default
