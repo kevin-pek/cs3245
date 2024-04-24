@@ -52,47 +52,59 @@ def get_terms(document: str):
     # print('=====TERMS=====\n', terms)
     return terms
 
-
-def simplify_court(court):
-    court_dict = {
-    1: ['SG Court of Appeal', 'SGCA'],
-    2: ['SG High Court', 'SGHC'],
-    3: ['UK House of Lords', 'UKHL'],
-    4: ['UK Supreme Court', 'UKSC'],
-    5: ['UK Court of Appeal', 'EWCA'],
-    6: ['High Court of Australia', 'HCA'],
-    7: ['CA Supreme Court', 'SCR'],
-    8: ['NSW Supreme Court', 'NSWSC'],
-    9: ['Singapore International Commercial Court', 'SICC'],
-    10: ['SG Privy Council', 'SGPC'],
-    11: ['UK High Court', 'EWHC'],
-    12: ['Federal Court of Australia', 'FCA'],
-    13: ['NSW Court of Appeal', 'NSWCA'],
-    14: ['NSW Court of Criminal Appeal', 'NSWCCA'],
-    15: ['HK High Court', 'HKHC'],
-    16: ['HK Court of First Instance', 'CFI'],
-    17: ['UK Crown Court', 'UKCC'],
-    18: ['Industrial Relations Court of Australia', 'IRCA'],
-    19: ['NSW Administrative Decisions Tribunal (Trial)', 'NSWADT'],
-    20: ['NSW Children\'s Court', 'NSWCC'],
-    21: ['NSW Civil and Administrative Tribunal', 'NCAT'],
-    22: ['NSW District Court', 'NSWDC'],
-    23: ['NSW Industrial Court', 'NSWIC'],
-    24: ['NSW Industrial Relations Commission', 'NSWIRC'],
-    25: ['NSW Land and Environment Court', 'NSWLEC'],
-    26: ['NSW Local Court', 'NSWLC'],
-    27: ['NSW Medical Tribunal', 'NSWMT'],
-    28: ['SG District Court', 'SGDC'],
-    29: ['SG Family Court', 'SGFC'],
-    30: ['SG Magistrates\' Court', 'SGMC'],
-    31: ['UK Military Court', 'UKMC'],
+class court_manipulation():
+    def __init__(self):
+        self.court_dict = {
+        1: ['SG Court of Appeal', 'SGCA'],
+        2: ['SG High Court', 'SGHC'],
+        3: ['UK House of Lords', 'UKHL'],
+        4: ['UK Supreme Court', 'UKSC'],
+        5: ['UK Court of Appeal', 'EWCA'],
+        6: ['High Court of Australia', 'HCA'],
+        7: ['CA Supreme Court', 'SCR'],
+        8: ['NSW Supreme Court', 'NSWSC'],
+        9: ['Singapore International Commercial Court', 'SICC'],
+        10: ['SG Privy Council', 'SGPC'],
+        11: ['UK High Court', 'EWHC'],
+        12: ['Federal Court of Australia', 'FCA'],
+        13: ['NSW Court of Appeal', 'NSWCA'],
+        14: ['NSW Court of Criminal Appeal', 'NSWCCA'],
+        15: ['HK High Court', 'HKHC'],
+        16: ['HK Court of First Instance', 'CFI'],
+        17: ['UK Crown Court', 'UKCC'],
+        18: ['Industrial Relations Court of Australia', 'IRCA'],
+        19: ['NSW Administrative Decisions Tribunal (Trial)', 'NSWADT'],
+        20: ['NSW Children\'s Court', 'NSWCC'],
+        21: ['NSW Civil and Administrative Tribunal', 'NCAT'],
+        22: ['NSW District Court', 'NSWDC'],
+        23: ['NSW Industrial Court', 'NSWIC'],
+        24: ['NSW Industrial Relations Commission', 'NSWIRC'],
+        25: ['NSW Land and Environment Court', 'NSWLEC'],
+        26: ['NSW Local Court', 'NSWLC'],
+        27: ['NSW Medical Tribunal', 'NSWMT'],
+        28: ['SG District Court', 'SGDC'],
+        29: ['SG Family Court', 'SGFC'],
+        30: ['SG Magistrates\' Court', 'SGMC'],
+        31: ['UK Military Court', 'UKMC'],
     }
+    def simplify_court(self, court):
+        for key, value in self.court_dict.items():
+            if value[0] == court:
+                return key
+        return None 
 
-    for key, value in court_dict.items():
-        if value[0] == court:
-            return key
-    return None 
-
+    def extract_court(self, raw_query):
+        
+        # Normalize query for case-insensitive matching
+        normalized_query = raw_query.lower()
+        
+        # Iterate over court dictionary to find a match
+        for key, (court_name, abbreviation) in self.court_dict.items():
+            # Check both court name and abbreviation for presence in the query string
+            if court_name.lower() in normalized_query or abbreviation.lower() in normalized_query:
+                return key  # Return the dictionary key (index) where match is found
+        
+        return None  # If no match found, return None
 
 def clean_content(text, keyword="supreme court of canada citation"):
     # Find the position of the keyword in the text

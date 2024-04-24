@@ -25,6 +25,8 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     citation, raw_query = extract_citations(raw_query)
 
     year, month_day = extract_date(raw_query)
+
+    court_id = 
     raw_terms = raw_query.split()
     if not raw_terms:
         return [], year, month_day, False, False, citation
