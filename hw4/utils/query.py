@@ -5,7 +5,7 @@ import math
 from collections import defaultdict
 from nltk.corpus import wordnet
 from utils.boolean import process_boolean_term, process_phrase_term, intersect
-from utils.preprocessing import process_term, extract_citations, extract_date
+from utils.preprocessing import process_term, extract_citations, extract_date, court_manipulation
 
 nltk.download('wordnet')
 nltk.download('omw-1.4')
@@ -26,10 +26,11 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
 
     year, month_day = extract_date(raw_query)
 
-    court_id = 
+    court_id = court_manipulation.extract_court(raw_query)
+    
     raw_terms = raw_query.split()
     if not raw_terms:
-        return [], year, month_day, False, False, citation
+        return [], year, month_day, False, False, citation, court_id
     expanded_terms = query_expansion(raw_terms)
     is_boolean = False
     is_freetext = False
@@ -90,7 +91,7 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
         is_valid = False
     if not is_valid:
         print(f"Invalid query: {raw_query}")
-    return terms, year, month_day, is_boolean, is_valid, citation
+    return terms, year, month_day, is_boolean, is_valid, citation, court_id
 
 
 def process_boolean_query(dictionary, terms, p: BufferedReader, N) -> list[tuple[int, float, float]]:
