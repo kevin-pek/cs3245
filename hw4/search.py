@@ -3,7 +3,6 @@
 import getopt
 import sys
 import pickle
-from collections import defaultdict
 import heapq
 from utils.boolean import process_boolean_term, intersect
 from utils.compression import load_dict
@@ -25,7 +24,6 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     # Load dictionary and postings
     dictionary = load_dict(dict_file)
     print("Loaded Dictionary: ")
-    # print(dictionary)
 
     with open(f"working/{dict_file}_cit", 'rb') as ds:
         citation_dict = pickle.load(ds)
@@ -37,48 +35,53 @@ def run_search(dict_file, postings_file, queries_file, results_file):
 
     with open(queries_file, 'r') as queries, open(results_file, 'w') as results, open(postings_file, 'rb') as p:
         for query in queries:
-            query_terms = get_terms(query)  # Extract terms from query
-            query_vector = normalise_vector(query_terms, dictionary, N)
-            bool_result = []
-            scores = defaultdict(lambda: defaultdict(float))
-
             terms, year, month_day, is_boolean, is_valid, citation = process_query(query)
-            if citation:
-                results.write(str(citation_dict[citation]) + ' ')
+
             if not is_valid: # skip if query is invalid
                 results.write('\n')
                 continue
 
+            # if query contains a citation that points directly to a case, add it straightaway
+            cit_match = None
+            if citation and citation in citation_dict:
+                cit_match = citation_dict[citation]
+                # print("CITATION MATCHES: ", cit_match)
+            # if a year is specifically mentioned we filter cases by its presence
+            year_matches = None
             if year in dictionary:
-                term_list = [year]
-                if month_day in dictionary:
-                    term_list.append(month_day)
-
-                for term in term_list:
-                    docs = intersect(docs, process_boolean_term(dictionary, term, p))
-
-                bool_result += docs
+                year_matches = set(d[0] for d in process_boolean_term(dictionary, year, p, mask=0b00100))
+                # print("YEAR MATCHES: ", year_matches)
+            # same if month-day is specified
+            date_matches = None
+            if month_day in dictionary:
+                date_matches = set(d[0] for d in process_boolean_term(dictionary, month_day, p, mask=0b01000))
+                # print("DATE MATCHES: ", date_matches)
 
             if is_boolean:
-                docs = process_boolean_query(dictionary, terms, p)
-                print(docs)
-                bool_result += docs
+                docs_scores = process_boolean_query(dictionary, terms, p, N)
+                # print("DOCUMENTS: ", docs_scores)
+                # compute scores
+                    # ranked_doc_ids.append((score, doc_id))
+                # scores = calculate_score(query_vector, dictionary, p, bool_result=docs)
+
             else: # is vector
-                scores = calculate_score(scores, query_vector, dictionary, p)
+                query_terms = get_terms(query)  # Extract terms from query
+                query_vector = normalise_vector(query_terms, dictionary, N)
+                # print("FREE TEXT: ", query_vector)
+                docs_scores = calculate_score(query_vector, dictionary, p)
+                # print("DOCUMENTS: ", docs_scores)
 
-
-            if bool_result != []:
-                scores = calculate_score(scores, query_vector, dictionary, p, bool_result= bool_result)
-
-            heap = []
-            for doc_id, components_scores in scores.items():
-                total_score = pagerank(components_scores)  # Score each component according to their weights
-                heapq.heappush(heap, (total_score, doc_id))
+            scores = pagerank(docs_scores, cit_match, year_matches, date_matches)
+            results.write(' '.join(str(id) for id, _ in sorted(scores.items(), key=lambda x: x[1], reverse=True)))
+            # heap = []
+            # for doc_id, components_scores in scores.items():
+            #     total_score = pagerank(components_scores)  # Score each component according to their weights
+            #     heapq.heappush(heap, (total_score, doc_id))
 
             # Extract & sort heap
-            ranked_docs = heapq.nlargest(len(heap), heap)
-            ranked_doc_ids = [str(doc_id) for _, doc_id in ranked_docs]
-            results.write(" ".join(ranked_doc_ids) + "\n")
+            # ranked_docs = heapq.nlargest(len(heap), heap)
+            # ranked_doc_ids = [str(doc_id) for _, doc_id in ranked_docs]
+            # results.write(" ".join(ranked_doc_ids) + "\n")
 
 
 dictionary_file = postings_file = file_of_queries = file_of_output = None

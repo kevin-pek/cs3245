@@ -16,7 +16,7 @@ def read_pkl_csv(file_path: str) -> dict[str, dict[str, str | dict]]:
         for row in csv_reader:
             court = row['court']
             date_posted = row['date_posted']
-            content = re.sub(r'\W+', ' ', row['content']).lower()
+            content = row['content'] # re.sub(r'\W+', ' ', row['content']).lower()
             title = row['title']    # need to do further processing to seperate the case name from case identifier, and maybe do sth about chinese cases
             documents[int(row['document_id'])] = {'court': court, 'date_posted': date_posted, 'content': content, 'title': title}
 

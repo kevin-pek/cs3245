@@ -1,9 +1,9 @@
 import unittest
 from io import BufferedReader
 import nltk
+import math
+from collections import defaultdict
 from nltk.corpus import wordnet
-
-
 from utils.boolean import process_boolean_term, process_phrase_term, intersect
 from utils.preprocessing import process_term, extract_citations, extract_date
 
@@ -90,9 +90,9 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
     return terms, year, month_day, is_boolean, is_valid, citation
 
 
-def process_boolean_query(dictionary, terms, p: BufferedReader):
+def process_boolean_query(dictionary, terms, p: BufferedReader, N) -> list[tuple[int, float, float]]:
     processed_terms = [] # we initialise a heap to intersect in order of lowest df
-    
+    idf = {}
     for term in terms:
         if isinstance(term, list): # phrase query
             df_max = 0 # for phrase queries we use the term with lowest df
@@ -105,6 +105,7 @@ def process_boolean_query(dictionary, terms, p: BufferedReader):
                 if df == 0: # if a phrase query term doesnt appear treat it as 0
                     df_max = 0
                     break
+                idf[t] = math.log(N / df, 10) if df != 0 and N != 0 else 0
                 df_max = max(df_max, df)
             if df_max == 0: # stop query processing if it does not even exist in dictionary
                 processed_terms = []
@@ -113,27 +114,31 @@ def process_boolean_query(dictionary, terms, p: BufferedReader):
         else:
             term = process_term(term)
             if term in dictionary:
+                df = dictionary[term][0]
+                idf[term] = math.log(N / df, 10) if df != 0 and N != 0 else 0
                 processed_terms.append((dictionary[term][0], term))
             else:
                 processed_terms = []
                 break
-
+    norm = math.sqrt(sum(x ** 2 for x in idf.values()))
+    qv = { term: weight / norm for term, weight in idf.items() }
     if not processed_terms: # if we have no processed terms means no result
         return []
 
     # initialise results with the first item in processed term
     processed_terms.sort()
     term = processed_terms[0][1]
+    scores = defaultdict(lambda: defaultdict(float))
     if isinstance(term, list):
-        docs = process_phrase_term(dictionary, term, p)
+        docs = process_phrase_term(dictionary, term, p, qv, scores)
     else:
-        docs = process_boolean_term(dictionary, term, p)
+        docs = process_boolean_term(dictionary, term, p, qv=qv, scores=scores)
     # do intersection in order of term document frequency
     for df, term in processed_terms[1:]:
         if isinstance(term, list): # phrase query
-            docs = intersect(docs, process_phrase_term(dictionary, term, p))
+            docs = intersect(docs, process_phrase_term(dictionary, term, p, qv, scores))
         else:
-            docs = intersect(docs, process_boolean_term(dictionary, term, p))
+            docs = intersect(docs, process_boolean_term(dictionary, term, p, qv=qv, scores=scores))
     return docs
 
 
@@ -150,7 +155,7 @@ def query_expansion(query_terms):
                 expanded_query.update([lemma.name() for lemma in hypernym.lemmas()])
             for hyponym in synset.hyponyms():
                 expanded_query.update([lemma.name() for lemma in hyponym.lemmas()])
-                
+    print("Expanded query: ", expanded_query)
     return expanded_query
 
 

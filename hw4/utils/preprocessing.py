@@ -1,35 +1,54 @@
 import re
-from nltk import sent_tokenize, word_tokenize
+import nltk
+from nltk import sent_tokenize, word_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords, wordnet
 
 """
 Functions to preprocess dataset and extract information from text to help with
 index construction and query handling.
 """
 
+nltk.download('averaged_perceptron_tagger')
+
 lemmatizer = WordNetLemmatizer()
-stop_words = ['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
-              'version', 'case', 'court', 'statement', 'line', 'para', 'fact']
+stop_words = set(['appellant', 'respondent', 'plaintiff', 'defendant', 'mr', 'dr', 'mdm', 'court', 
+              'version', 'case', 'court', 'statement', 'line', 'para', 'fact', 'v'])
+nltk_stopwords = set(stopwords.words('english'))
+
+def convert_pos(tag):
+    if tag.startswith('J'):
+        return wordnet.ADJ
+    elif tag.startswith('V'):
+        return wordnet.VERB
+    elif tag.startswith('N'):
+        return wordnet.NOUN
+    elif tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return wordnet.NOUN
 
 
-def process_term(word: str):
+def process_term(word: str, tag = 'N'): # treat word as noun by default
     # remove non alphanumeric character, but keep periods that are found
     # between 2 numbers as they are likely part of a decimal number
-    word = re.sub(r'(?<!\d)\.(?!\d)|[^\w\d.]', '', word)
-
-    # Check if word is ASCII to ensure it's likely English
-    if word.isascii() and word not in stop_words and word.isalnum():
-        return lemmatizer.lemmatize(word.lower())
+    word = re.sub(r'(?<!\d)\.(?!\d)|[^\w\d.]', '', word).lower()
+    if word.isascii() and word not in stop_words and word not in nltk_stopwords:
+        return lemmatizer.lemmatize(word, convert_pos(tag))
 
 
 def get_terms(document: str):
+    # print('=====ORIGINAL=====\n', document)
     terms = []
     for sentence in sent_tokenize(document):
+        # TODO: Some special handling for boolean queries that convert split words into phrase query
         sentence = re.sub(r'[-/]', ' ', sentence)  # Split words based on hyphens and slashes
-        for word in word_tokenize(sentence):
-            term = process_term(word)
+        tagged_words = pos_tag(word_tokenize(sentence))
+        for word, tag in tagged_words:
+            term = process_term(word, tag)
             if term:
                 terms.append(term)
+    # print('=====TERMS=====\n', terms)
     return terms
 
 

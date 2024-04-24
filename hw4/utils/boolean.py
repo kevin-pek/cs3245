@@ -1,6 +1,7 @@
 import pickle
 import unittest
 import tempfile
+from collections import defaultdict
 import os
 from utils.compression import gap_decode, vb_decode, vb_encode, gap_encode
 
@@ -9,11 +10,11 @@ def intersect(p1, p2):
     i, j = 0, 0
     results = []
     while i < len(p1) and j < len(p2):
-        if p1[i] == p2[j]:
+        if p1[i][0] == p2[j][0]:
             results.append(p2[j])
             i += 1
             j += 1
-        elif p2[j] > p1[i]:
+        elif p2[j][0] > p1[i][0]:
             i += 1
         else:
             j += 1
@@ -36,45 +37,59 @@ def intersect_consecutive(p1, p2):
     return results
 
 
-def process_phrase_term(dictionary, terms, p):
+def process_phrase_term(dictionary, terms: list[str], p, qv: dict[str, float], scores):
     if not terms:
         return []
 
     # handle first term in the phrase query
-    p.seek(dictionary[terms[0]][1])
+    term = terms[0]
+    p.seek(dictionary[term][1])
     postings = pickle.load(p)
     acc = {}
     doc_id = 0
-    for enc_doc_id, _, _, _, enc_posits in postings:
+    for enc_doc_id, w_c, w_t, _, enc_posits in postings:
         doc_id += vb_decode(enc_doc_id)[0]
         positions = gap_decode(vb_decode(enc_posits))
         acc[doc_id] = positions
+        scores[doc_id]['content'] += w_c * qv.get(term, 0)
+        scores[doc_id]['title'] += w_t * qv.get(term, 0)
 
     for term in terms[1:]:
         p.seek(dictionary[term][1])
         postings = pickle.load(p)
         doc_id = 0
-        for enc_doc_id, _, _, _, enc_posits in postings:
+        for enc_doc_id, w_c, w_t, _, enc_posits in postings:
             doc_id += vb_decode(enc_doc_id)[0]
             if doc_id in acc: # if document is still in consideration we check if it is still valid based on positional index
                 positions = gap_decode(vb_decode(enc_posits))
-                matches = intersect_consecutive(acc[doc_id], positions)
+                matches = intersect_consecutive(acc[doc_id], positions) # TODO: Maybe add some leniency factor
                 if matches:
                     acc[doc_id] = matches
+                    scores[doc_id]['content'] += w_c * qv.get(term, 0)
+                    scores[doc_id]['title'] += w_t * qv.get(term, 0)
                 else:
                     del acc[doc_id]
-    return sorted(acc.keys())
+                    del scores[doc_id]
+    return sorted([(id, w['content'], w['title']) for id, w in scores.items()], key=lambda x: x[0])
 
 
-def process_boolean_term(dictionary, term, p):
+def process_boolean_term(dictionary, term, p, scores=None, mask=None, qv=None):
     p.seek(dictionary[term][1])
     postings = pickle.load(p)
-    docs = []
+    if not scores:
+        scores = defaultdict(lambda: defaultdict(float))
     doc_id = 0
-    for post in postings:
-        doc_id += vb_decode(post[0])[0]
-        docs.append(doc_id)
-    return docs
+    for enc_doc_id, w_c, w_t, fields, _ in postings:
+        doc_id += vb_decode(enc_doc_id)[0]
+        if mask and not fields & mask: # if posting does not match on a specific field
+            continue
+        if qv:
+            scores[doc_id]['content'] += w_c * qv.get(term, 0)
+            scores[doc_id]['title'] += w_t * qv.get(term, 0)
+        else:
+            scores[doc_id]['content'] = w_c
+            scores[doc_id]['title'] = w_t
+    return sorted([(id, w['content'], w['title']) for id, w in scores.items()], key=lambda x: x[0])
 
 
 class TestQuery(unittest.TestCase):

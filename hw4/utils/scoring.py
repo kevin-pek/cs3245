@@ -1,43 +1,38 @@
 import pickle
-from utils.compression import gap_decode, vb_decode
+from collections import defaultdict
+from utils.compression import vb_decode
 
 
-component_weights = {
-    'title': 0.6,
-    'content': 0.4,
-}
-
-def calculate_score(scores, query_vector, dictionary, p, bool_result = None, tfidf_threshold=0.1):
-
-    for term, wq in query_vector.items():
-        if term in dictionary and wq >= tfidf_threshold:  # Apply TF-IDF thresholding
+def calculate_score(qv: dict[str, float], dictionary, p):
+    scores = defaultdict(lambda: defaultdict(float))
+    for term, wq in qv.items():
+        if term in dictionary:
             offset = dictionary[term][1]
             p.seek(offset)
             postings = pickle.load(p)
             doc_id = 0 # accumulator for doc_id since it is stored using gap encoding
-            # NOTE: Similar process needs to be done for interpreting postional index
-            #       When handling phrase queries if we are dealing with boolean queries
-            #       By passing it through gap_decode(vb_decode(position_idx))
-            for enc_doc_id, w_c, w_t, fields, position_idx in postings:
-                gap_doc_id = vb_decode(enc_doc_id)[0] # decode and add gap value to document id
-                print("Document ID Gap: ", gap_doc_id)
-                doc_id += gap_doc_id
-                if bool_result:         # if boolean/date: rank only existing results
-                    if doc_id in bool_result:
-                        pass
-                    else:
-                        continue
-                print("Loaded Postings: ", (doc_id, w_c, w_t, fields, gap_decode(vb_decode(position_idx))))
-                scores[doc_id]['content'] += w_c * wq
-                scores[doc_id]['title'] += w_t * wq
+            for enc_doc_id, w_c, w_t, fields, _ in postings:
+                doc_id += vb_decode(enc_doc_id)[0] # decode and add gap value to document id
+                if fields & 0b10001: # only add weights if it has either content or title
+                    scores[doc_id]['content'] += w_c * wq
+                    scores[doc_id]['title'] += w_t * wq
+    return [(id, w['content'], w['title']) for id, w in scores.items()]
 
-                # TODO: handle fields & positional index
-                scores[doc_id]['court'] = None
+
+def pagerank(docs_scores: list[tuple[int, float, float]], cit_match: int | None=None, date_matches: set[int] | None=None, year_matches: set[int] | None=None):
+    scores = {}
+    for doc_id, w_c, w_t in docs_scores:
+        # print(doc_id, w_c, w_t)
+        score = w_c + w_t
+        if cit_match and doc_id == cit_match:
+            score += 0.1
+        if date_matches and doc_id in date_matches:
+            score += 0.015
+        if year_matches and doc_id in year_matches:
+            score += 0.01
+        if score < 0.02: # threshold
+            continue
+        scores[doc_id] = score
+    # print("SCORES: ", sorted([(id, w) for id, w in scores.items()], key=lambda x: x[1], reverse=True))
     return scores
-
-def pagerank(scores, component_weights= component_weights):
-    total_score = 0
-    for component, weight in component_weights.items():
-        total_score += scores.get(component, 0) * weight
-    return total_score
 
