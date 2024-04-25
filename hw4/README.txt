@@ -51,18 +51,30 @@ BOOLEAN QUERIES:
   during the searching process.
 - We stop searching and return nothing if there are no matches given for a term.
 - When a boolean query is given we will begin with handling any phrase queries
-  as we expect them to yield a lesser number of results. Results are retrieved
+  as we expect them to yield a lesser number of matches. Matches are retrieved
   through the positional index of the terms. At the same time we maintain a set
   that keeps track of terms we have already retrieved.
+- We then calculate the cosine similarity score between the query vectors and the
+  matched document vectors to determine their relative order, and eliminating 
+  documents with a score that is lower than a pre-defined threshold and return 
+  a sorted list of tuples, containing the document ID, score of content, score of 
+  title, and the score of court. 
+- These scores are then added to the list of document scores and passed to the 
+  total_score function, where the weighted total score is calculated. 
 
 FREETEXT QUERIES:
 - Our approach for freetext queries uses a vector space model using TF-IDF for 
   ranking the documents based on their cosine similarity to the query vector. 
 - We first weigh the TF-IDF weight of each term in the query, then we normalise 
   the query vector and compute the TF-IDF scores of the title and content of each
-  document. We also award more scores if the document contains any citation, date,
-  or year from the query, and award more scores if it comes from a more important 
-  court as well.
+  document.
+- We then calculate the cosine similarity score between the query vectors and the
+  document vectors to determine the relevant documents, and eliminating documents 
+  with a score that is lower than a pre-defined threshold, and return a sorted
+  list of tuples, containing the document ID, score of content, score of title,
+  and the score of court. 
+- These scores are then added to the list of document scores and passed to the 
+  total_score function, where the weighted total score is calculated. 
 
 QUERY REFINEMENT:
 - Query refinement in our system is designed to enhance the effectiveness and 
@@ -75,7 +87,19 @@ QUERY REFINEMENT:
 - We also implemented relevance feedback by taking the top-k most frequent terms of
   the top-k documents with the highest scores. The system refines the query based on 
   simulated user feedback from initial results. The system adds key terms from these 
-  top-k documents to the query to enhance the query.
+  top-k documents to the query to enhance the query. The enhanced query is then 
+  converted into vectors again, and the scores are reculculated and updated, before
+  the final total score is calculated.
+
+TOTAL SCORE CALCULATION:
+- We place a heavier emphasis of the score of the title as these are more specific and contain
+  more information than words in the content. A bonus score is then added based on 
+  the importance of the court, and we decided to place a heavier emphasis on Singapore
+  cases due to the nature of Intellex being a Singapore company, with their 
+  product likely targeted towards the Singapore market.
+- We also award more scores if the document contains any citation, date, or year from the query, 
+  as if these fields exist in the query, it is likely that the user expect to see results
+  from a specific year or date, or is querying with the unique citation number of the case.
 
 
 == Files included with this submission ==
