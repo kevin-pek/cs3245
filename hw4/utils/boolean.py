@@ -42,19 +42,22 @@ def process_phrase_term(dictionary, terms: list[str], p, qv: dict[str, float], s
         return []
 
     # handle first term in the phrase query
-    term = terms[0]
-    p.seek(dictionary[term][1])
-    postings = pickle.load(p)
     acc = {}
-    doc_id = 0
-    for enc_doc_id, _, w_c, w_t, _, enc_posits in postings:
-        doc_id += vb_decode(enc_doc_id)[0]
-        positions = gap_decode(vb_decode(enc_posits))
-        acc[doc_id] = positions
-        scores[doc_id]['content'] += w_c * qv.get(term, 0)
-        scores[doc_id]['title'] += w_t * qv.get(term, 0)
+    term = terms[0]
+    if term in dictionary:
+        p.seek(dictionary[term][1])
+        postings = pickle.load(p)
+        doc_id = 0
+        for enc_doc_id, _, w_c, w_t, _, enc_posits in postings:
+            doc_id += vb_decode(enc_doc_id)[0]
+            positions = gap_decode(vb_decode(enc_posits))
+            acc[doc_id] = positions
+            scores[doc_id]['content'] += w_c * qv.get(term, 0)
+            scores[doc_id]['title'] += w_t * qv.get(term, 0)
 
     for term in terms[1:]:
+        if term not in dictionary:
+            continue
         p.seek(dictionary[term][1])
         postings = pickle.load(p)
         doc_id = 0
@@ -75,6 +78,8 @@ def process_phrase_term(dictionary, terms: list[str], p, qv: dict[str, float], s
 
 
 def process_boolean_term(dictionary, term, p, scores=None, mask=None, qv=None):
+    if term not in dictionary:
+        return []
     p.seek(dictionary[term][1])
     postings = pickle.load(p)
     if not scores:

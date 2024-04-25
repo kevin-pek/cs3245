@@ -57,7 +57,7 @@ def gap_decode(num_list: list[int]) -> list[int]:
 
 def compress_and_save_dict(dictionary: dict[str, tuple[int, int]], out_dict: str):
     """Save dictionary terms as a string in a separate file with frontcoding."""
-    with open(out_dict, "wb") as d, open(f"{out_dict}_str", "w") as ds:
+    with open(out_dict, "wb") as d, open(f"str_{out_dict}", "w") as ds:
         terms = sorted(dictionary.keys())
         prev = terms[0]
         dict_entries = [dictionary[terms[0]]]
@@ -78,7 +78,7 @@ def compress_and_save_dict(dictionary: dict[str, tuple[int, int]], out_dict: str
 
 
 def load_dict(dict_file: str) -> dict[str, tuple[int, int]]:
-    with open(dict_file, "rb") as d, open(f"{dict_file}_str", "r") as ds:
+    with open(dict_file, "rb") as d, open(f"str_{dict_file}", "r") as ds:
         index = {}
         prev = ""
         for entry in pickle.load(d):
@@ -144,7 +144,7 @@ class TestDictionaryCompression(unittest.TestCase):
 
     def tearDown(self):
         os.remove(self.dict_file)
-        os.remove(f"{self.dict_file}_str")
+        os.remove(f"str_{self.dict_file}")
 
     def test_compress_and_load_dict(self):
         compress_and_save_dict(self.test_dict, self.dict_file)

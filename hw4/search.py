@@ -5,9 +5,9 @@ import sys
 import pickle
 from utils.boolean import process_boolean_term
 from utils.compression import load_dict
-from utils.preprocessing import get_terms
+from utils.preprocessing import get_terms, process_term
 from utils.vector import normalise_vector
-from utils.query import process_query, process_boolean_query
+from utils.query import process_query, process_boolean_query, query_expansion
 from utils.scoring import calculate_score, total_score
 
 def usage():
@@ -59,6 +59,12 @@ def run_search(dict_file, postings_file, queries_file, results_file):
             if is_boolean:
                 docs_scores = process_boolean_query(dictionary, terms, p, N)
                 # print("DOCUMENTS: ", docs_scores)
+                if not docs_scores:
+                    for term in query_expansion(terms):
+                        term = process_term(term)
+                        if term:
+                            docs_scores.extend(process_boolean_term(dictionary, term, p))
+                    # print("EXPANDED DOCUMENTS: ", docs_scores)
             else: # is vector
                 terms = get_terms(query)  # Extract terms from query
                 query_vector = normalise_vector(terms, dictionary, N)
