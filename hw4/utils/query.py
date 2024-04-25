@@ -10,7 +10,7 @@ from utils.preprocessing import process_term, extract_citations, extract_date, c
 nltk.download('wordnet')
 nltk.download('omw-1.4')
 
-def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
+def process_query(raw_query: str) -> tuple[list[str], int, int, bool, bool, str | None]:
     """
     Single pass through the query to determine type of query and process terms.
     Returns a list of terms and phrases to search for, and boolean representing
@@ -26,59 +26,58 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
 
     year, month_day = extract_date(raw_query)
 
-    court_id = court_manipulation().extract_court(raw_query)
+    # court_id = court_manipulation().extract_court(raw_query)
     
     raw_terms = raw_query.split()
     if not raw_terms:
-        return [], year, month_day, False, False, citation, court_id
-    expanded_terms = query_expansion(raw_terms)
+        return [], year, month_day, False, False, citation # , court_id
     is_boolean = False
     is_freetext = False
     is_valid = True
     i = 0
     terms = []
-    while i < len(expanded_terms):
-        term = expanded_terms[i]
+    while i < len(raw_terms):
+        term = raw_terms[i]
         if term[0] == '"': # start of phrase query
             if is_freetext or len(term) == 1 or term == '""':
                 # if term is single double quote or empty phrase, invalid query
                 is_valid = False
                 break
-            elif i > 0 and expanded_terms[i - 1] != 'AND':
+            elif i > 0 and raw_terms[i - 1] != 'AND':
                 # if not first term and not preceded by an AND, invalid query
                 is_valid = False
                 break
             is_boolean = True # phrase query only supported in boolean retrieval
             term = term[1:] # remove first double quote character from the word
             phrase = []
-            while i < len(expanded_terms):
+            while i < len(raw_terms):
                 if term[-1] == '"':
                     # end of phrase, add term without including the double quote
                     phrase.append(term[:-1])
                     break
-                elif i == len(expanded_terms) - 1:
+                elif i == len(raw_terms) - 1:
                     # if last term but phrase is not closed, invalid query
                     is_valid = False
                     break
                 phrase.append(term) # add term to phrase if not last term
                 i += 1
-                term = expanded_terms[i]
+                term = raw_terms[i]
             if not is_valid: # escape hatch for invalid queries
                 break
             terms.append(phrase)
         elif term == "AND":
-            if is_freetext or i == 0 or i == len(expanded_terms) - 1:
+            if is_freetext or i == 0 or i == len(raw_terms) - 1:
                 # if AND does not appear between 2 terms, invalid query
                 is_valid = False
                 break
-            elif expanded_terms[i - 1] == 'AND':
+            elif raw_terms[i - 1] == 'AND':
                 # if 2 consecutive ANDs appear, invalid query
                 is_valid = False
                 break
             is_boolean = True
         else:
             # single word term encountered
-            if not is_freetext and i > 0 and expanded_terms[i - 1] != 'AND':
+            if not is_freetext and i > 0 and raw_terms[i - 1] != 'AND':
                 # if 2 consecutive single terms are encountered, freetext
                 is_freetext = True
                 if is_boolean:
@@ -91,7 +90,9 @@ def process_query(raw_query: str) -> tuple[list[str], bool, bool]:
         is_valid = False
     if not is_valid:
         print(f"Invalid query: {raw_query}")
-    return terms, year, month_day, is_boolean, is_valid, citation, court_id
+    if is_freetext:
+        terms = query_expansion(terms)
+    return terms, year, month_day, is_boolean, is_valid, citation # , court_id
 
 
 def process_boolean_query(dictionary, terms, p: BufferedReader, N) -> list[tuple[int, float, float]]:
@@ -150,9 +151,7 @@ def query_expansion(query_terms):
     expanded_query = set(query_terms)
     
     for word in query_terms:
-        synsets = wordnet.synsets(word)[:5] 
-        
-        for synset in wordnet.synsets(word):
+        for synset in wordnet.synsets(word)[:5]:
             # Add all lemmas of the synset
             expanded_query.update([lemma.name() for lemma in synset.lemmas()])
             
@@ -160,7 +159,7 @@ def query_expansion(query_terms):
                 expanded_query.update([lemma.name() for lemma in hypernym.lemmas()])
             for hyponym in synset.hyponyms():
                 expanded_query.update([lemma.name() for lemma in hyponym.lemmas()])
-    print("Expanded query: ", expanded_query)
+    # print("Expanded query: ", expanded_query)
     return list(expanded_query)
 
 

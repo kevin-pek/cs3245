@@ -6,9 +6,9 @@ import os
 from utils.compression import gap_decode, vb_decode, vb_encode, gap_encode
 
 
-def intersect(p1, p2):
+def intersect(p1: list[tuple[int, float, float]], p2: list[tuple[int, float, float]]):
     i, j = 0, 0
-    results = []
+    results: list[tuple[int, float, float]] = []
     while i < len(p1) and j < len(p2):
         if p1[i][0] == p2[j][0]:
             results.append(p2[j])
@@ -21,10 +21,10 @@ def intersect(p1, p2):
     return results
 
 
-def intersect_consecutive(p1, p2):
+def intersect_consecutive(p1: list[int], p2: list[int]):
     """Returns positions in p2 that are directly follow from positions in p1."""
     i, j = 0, 0
-    results = []
+    results: list[int] = []
     while i < len(p1) and j < len(p2):
         if p2[j] - p1[i] == 1: # curr element in p2 directly follows from current element in p1
             results.append(p2[j])
@@ -47,7 +47,7 @@ def process_phrase_term(dictionary, terms: list[str], p, qv: dict[str, float], s
     postings = pickle.load(p)
     acc = {}
     doc_id = 0
-    for enc_doc_id, w_c, w_t, _, enc_posits in postings:
+    for enc_doc_id, _, w_c, w_t, _, enc_posits in postings:
         doc_id += vb_decode(enc_doc_id)[0]
         positions = gap_decode(vb_decode(enc_posits))
         acc[doc_id] = positions
@@ -58,7 +58,7 @@ def process_phrase_term(dictionary, terms: list[str], p, qv: dict[str, float], s
         p.seek(dictionary[term][1])
         postings = pickle.load(p)
         doc_id = 0
-        for enc_doc_id, w_c, w_t, _, enc_posits in postings:
+        for enc_doc_id, enc_court_id, w_c, w_t, _, enc_posits in postings:
             doc_id += vb_decode(enc_doc_id)[0]
             if doc_id in acc: # if document is still in consideration we check if it is still valid based on positional index
                 positions = gap_decode(vb_decode(enc_posits))
@@ -67,10 +67,11 @@ def process_phrase_term(dictionary, terms: list[str], p, qv: dict[str, float], s
                     acc[doc_id] = matches
                     scores[doc_id]['content'] += w_c * qv.get(term, 0)
                     scores[doc_id]['title'] += w_t * qv.get(term, 0)
+                    scores[doc_id]['court'] = vb_decode(enc_court_id)[0]
                 else:
                     del acc[doc_id]
                     del scores[doc_id]
-    return sorted([(id, w['content'], w['title']) for id, w in scores.items()], key=lambda x: x[0])
+    return sorted([(id, w['content'], w['title'], w['content']) for id, w in scores.items()], key=lambda x: x[0])
 
 
 def process_boolean_term(dictionary, term, p, scores=None, mask=None, qv=None):
@@ -79,17 +80,19 @@ def process_boolean_term(dictionary, term, p, scores=None, mask=None, qv=None):
     if not scores:
         scores = defaultdict(lambda: defaultdict(float))
     doc_id = 0
-    for enc_doc_id, w_c, w_t, fields, _ in postings:
+    for enc_doc_id, enc_court_id, w_c, w_t, fields, _ in postings:
         doc_id += vb_decode(enc_doc_id)[0]
         if mask and not fields & mask: # if posting does not match on a specific field
             continue
         if qv:
             scores[doc_id]['content'] += w_c * qv.get(term, 0)
             scores[doc_id]['title'] += w_t * qv.get(term, 0)
+            scores[doc_id]['court'] = vb_decode(enc_court_id)[0]
         else:
             scores[doc_id]['content'] = w_c
             scores[doc_id]['title'] = w_t
-    return sorted([(id, w['content'], w['title']) for id, w in scores.items()], key=lambda x: x[0])
+            scores[doc_id]['court'] = vb_decode(enc_court_id)[0]
+    return sorted([(id, w['content'], w['title'], w['content']) for id, w in scores.items()], key=lambda x: x[0])
 
 
 class TestQuery(unittest.TestCase):
