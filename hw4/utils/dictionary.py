@@ -69,9 +69,9 @@ class ZoneIndex():
         self.topk[doc_id] = top_terms
 
         # calculate lnc weights for each term in document
-        tf_c = { term: 1 + math.log10(tf) for term, tf in self.freq.items() }
+        tf_c = { term: 1 + math.log10(tf+1) for term, tf in self.freq.items() }
         norm_c = math.sqrt(sum(x ** 2 for x in tf_c.values()))
-        tf_t = { term: 1 + math.log10(tf) for term, tf in self.title_freq.items() }
+        tf_t = { term: 1 + math.log10(tf+1) for term, tf in self.title_freq.items() }
         norm_t = math.sqrt(sum(x ** 2 for x in tf_t.values()))
         for term, w in tf_c.items():
             wc = w / norm_c if norm_c != 0 else 0
