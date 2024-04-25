@@ -74,7 +74,7 @@ def process_phrase_term(dictionary, terms: list[str], p, qv: dict[str, float], s
                 else:
                     del acc[doc_id]
                     del scores[doc_id]
-    return sorted([(id, w['content'], w['title'], w['content']) for id, w in scores.items()], key=lambda x: x[0])
+    return sorted([(id, w['content'], w['title'], w['court']) for id, w in scores.items()], key=lambda x: x[0])
 
 
 def process_boolean_term(dictionary, term, p, scores=None, mask=None, qv=None):
