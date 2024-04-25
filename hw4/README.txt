@@ -69,11 +69,9 @@ BOOLEAN QUERIES:
   document frequency. Phrase queries are sorted based on the largest document
   frequency within the phrase, since that would be the performance bottleneck
   during the searching process.
-- We stop searching and return nothing if there are no matches given for a term.
-- When a boolean query is given we will begin with handling any phrase queries
-  as we expect them to yield a lesser number of matches. Matches are retrieved
-  through the positional index of the terms. At the same time we maintain a set
-  that keeps track of terms we have already retrieved.
+- If there are no matches given for a term, we attempt to merge the search terms
+  to get a better range of results. If this still yields no results, we retry
+  with a set of expanded queries from query expansion.
 - We then calculate the cosine similarity score between the query vectors and the
   matched document vectors to determine their relative order, and eliminating 
   documents with a score that is lower than a pre-defined threshold and return 
@@ -96,14 +94,30 @@ FREETEXT QUERIES:
 - These scores are then added to the list of document scores and passed to the 
   total_score function, where the weighted total score is calculated. 
 
+TOTAL SCORE CALCULATION:
+- We place a heavier emphasis of the score of the title as these are more specific and contain
+  more information than words in the content.
+- A bonus score is also added based on the importance of the court, and we decided
+  to place a heavier emphasis on Singapore cases due to the nature of Intellex
+  being a Singapore company, with their product likely targeted towards Singapore's market.
+- We also award more scores if the document contains any citation, date, or year from the query, 
+  as if these fields exist in the query, it is likely that the user expect to see results
+  from a specific year or date, or is querying with the unique citation number of the case.
+
+
+
 QUERY REFINEMENT:
 - Query refinement in our system is designed to enhance the effectiveness and 
   relevance of the search results by modifying the original query based on additional 
   insights derived from initial results or through semantic expansion techniques. 
+
+Query Expansion
 - We implemented query expansion using the wordnet module from NLTK. This method 
   broadens the query to include semantically related terms like synonyms, hypernyms, 
   and hyponyms. It captures a wider array of relevant documents that might not have 
   been retrieved otherwise.
+
+Pseudo Relevance Feedback
 - We also implemented relevance feedback by taking the top-k most frequent terms of
   the top-k documents with the highest scores. The system refines the query based on 
   simulated user feedback from initial results. The system adds key terms from these 
@@ -111,25 +125,12 @@ QUERY REFINEMENT:
   converted into vectors again, and the scores are reculculated and updated, before
   the final total score is calculated.
 
-TOTAL SCORE CALCULATION:
-- We place a heavier emphasis of the score of the title as these are more specific and contain
-  more information than words in the content. A bonus score is then added based on 
-  the importance of the court, and we decided to place a heavier emphasis on Singapore
-  cases due to the nature of Intellex being a Singapore company, with their 
-  product likely targeted towards the Singapore market.
-- We also award more scores if the document contains any citation, date, or year from the query, 
-  as if these fields exist in the query, it is likely that the user expect to see results
-  from a specific year or date, or is querying with the unique citation number of the case.
 
 
 == Files included with this submission ==
 
 index.py                    - indexing phase
-utils.py                    - contains get_terms function to process string to list of terms,
-                            process_terms function to convert list of terms to processed form,
-                            normalize_vector to do cosine normalisation for tf-idf vectors
 search.py                   - searching phase
-query.py                    - contains process_query function to handle processing of queries
 
 utils/preprocessing.py      - contains convert_pos function to map part-of-speech tags from NLTK to WordNet compatible tags for lemmatization.
                             process_term function to clean, lemmatize, and filter words based on custom and NLTK stop words.
