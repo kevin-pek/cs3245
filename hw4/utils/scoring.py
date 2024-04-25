@@ -57,7 +57,7 @@ def calculate_score(qv: dict[str, float], dictionary, p):
     return [(id, w['content'], w['title']) for id, w in scores.items()], top_terms_dict
 
 
-def total_score(docs_scores: list[tuple[int, float, float]], cit_match: int | None=None, date_matches: set[int] | None=None, year_matches: set[int] | None=None):
+def total_score(docs_scores: list[tuple[int, float, float]], cit_match: int | None=None, date_matches: set[int] | None=None, year_matches: set[int] | None=None, score_threshold= 0.02):
     scores = {}
     for doc_id, w_c, w_t in docs_scores:
         # print(doc_id, w_c, w_t)
@@ -68,7 +68,7 @@ def total_score(docs_scores: list[tuple[int, float, float]], cit_match: int | No
             score += 0.015
         if year_matches and doc_id in year_matches:
             score += 0.01
-        if score < 0.02: # threshold
+        if score < score_threshold: # threshold
             continue
         scores[doc_id] = score
     print("SCORES: ", sorted([(id, w) for id, w in scores.items()], key=lambda x: x[1], reverse=True))
