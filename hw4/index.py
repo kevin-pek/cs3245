@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from tqdm import tqdm
 import sys
 import getopt
 import os
@@ -28,23 +29,23 @@ def build_index(in_file, out_dict, out_postings):
         os.makedirs('working')
     N = 0 # number of documents in the entire collection
     index = ZoneIndex()
-    cit_dict = {} # Dictionary for citation
+    cit_dict = {} # map citations to their corresponding documents
 
-    for doc_id, doc_dict in documents.items():
+    for doc_id, doc_dict in tqdm(documents.items()):
+        doc_id = int(doc_id)
         N += 1
-        # get & process the data
-        title, citations = extract_citations(doc_dict['title'], False)
 
-        # process citation and date
+        title, citations = extract_citations(doc_dict['title'], False)
         for citation in citations:  
-            cit_dict[citation] = int(doc_id)
+            cit_dict[citation] = doc_id
+
         year_posted, date_posted = extract_date(doc_dict['date_posted'], False)
 
-        # process court
         court = doc_dict['court']
+        court_id = court_manipulation().simplify_court(court) # get number representation of court
+
         if court == 'CA Supreme Court': # This is because supreme court of canada have some unidentified characters before the start of the actual judgment
             content = clean_content(content)
-        court_id = court_manipulation().simplify_court(court)
         content = doc_dict['content']
 
         # get term frequency for each term in current document
@@ -54,18 +55,17 @@ def build_index(in_file, out_dict, out_postings):
             pos += 1
         index.add_year(year_posted)
         index.add_date(date_posted)
-        index.add_court(court_id)
         for term in get_terms(title):
             index.add_title(term)
 
         index.calculate_weights(doc_id, court_id)
 
     index.save(out_dict, out_postings)
-    with open(f"working/{out_dict}_cit", "wb") as ds:
+    with open(f"cit_{out_dict}", "wb") as ds:
         # compression not needed due to minimal memory usage
         pickle.dump(cit_dict, ds)
 
-    with open(f"working/{out_dict}_len", "wb") as dl:
+    with open(f"len_{out_dict}", "wb") as dl:
         # compression doesnt matter for this since its just a number
         pickle.dump(N, dl)
 
