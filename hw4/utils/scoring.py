@@ -53,12 +53,12 @@ def calculate_score(qv: dict[str, float], dictionary, p):
     return [(id, w['content'], w['title'], w['court']) for id, w in scores.items()]
 
 
-def total_score(docs_scores: list[tuple[int, float, float, int]], cit_match: int | None=None, date_matches: set[int] | None=None, year_matches: set[int] | None=None, score_threshold= 0.02):
+def total_score(docs_scores: list[tuple[int, float, float, int]], cit_match: int | None=None, date_matches: set[int] | None=None, year_matches: set[int] | None=None, score_threshold= 0.01):
     scores = {}
     for doc_id, w_c, w_t, court_id in docs_scores:
         # print(doc_id, w_c, w_t)
         score = 0.7 * w_c + 0.9 * w_t
-        score += court_w.get(court_id, 0)
+        score += court_w.get(court_id, 0) * 1.5
         if cit_match and doc_id == cit_match:
             score += 0.1
         if date_matches and doc_id in date_matches:
