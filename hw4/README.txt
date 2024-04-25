@@ -177,8 +177,9 @@ utils/vector.py             - contains normalise_vector function to compute the 
 utils/file.py               - contains read_pkl_csv function, which reads a CSV file, parses its contents into a dictionary, and then pickles it to a file for storage.
                             load_pkl function loads a pickle file containing documents and returns it as a dictionary.
 
-working/dictionary.txt_cit  - contains document ID to citation dictionary
-working/dictionary.txt_len  - contains the total number of documents in the corpus
+str_dictionary.txt  - compressed terms in the dictionary
+cit_dictionary.txt  - contains document ID to citation dictionary
+len_dictionary.txt  - contains the total number of documents in the corpus
 
 == Statement of individual work ==
 
