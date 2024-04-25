@@ -151,14 +151,14 @@ def query_expansion(query_terms):
     expanded_query = set(query_terms)
     
     for word in query_terms:
-        for synset in wordnet.synsets(word)[:5]:
+        for synset in wordnet.synsets(word)[:3]:
             # Add all lemmas of the synset
-            expanded_query.update([lemma.name() for lemma in synset.lemmas()])
+            expanded_query.update([lemma.name().replace('_', ' ') for lemma in synset.lemmas()])
             
             for hypernym in synset.hypernyms():
-                expanded_query.update([lemma.name() for lemma in hypernym.lemmas()])
+                expanded_query.update([lemma.name().replace('_', ' ') for lemma in hypernym.lemmas()])
             for hyponym in synset.hyponyms():
-                expanded_query.update([lemma.name() for lemma in hyponym.lemmas()])
+                expanded_query.update([lemma.name().replace('_', ' ') for lemma in hyponym.lemmas()])
     # print("Expanded query: ", expanded_query)
     return list(expanded_query)
 

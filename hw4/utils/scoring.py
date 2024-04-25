@@ -58,7 +58,7 @@ def total_score(docs_scores: list[tuple[int, float, float, int]], cit_match: int
     for doc_id, w_c, w_t, court_id in docs_scores:
         # print(doc_id, w_c, w_t)
         score = 0.7 * w_c + 0.9 * w_t
-        score += court_w.get(court_id, 0) * 1.5
+        score += court_w.get(court_id, 0) * 2
         if cit_match and doc_id == cit_match:
             score += 0.1
         if date_matches and doc_id in date_matches:
