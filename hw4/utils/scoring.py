@@ -40,7 +40,6 @@ def get_court_w(court_id):
 
 def calculate_score(qv: dict[str, float], dictionary, p):
     scores = defaultdict(lambda: defaultdict(float))
-    top_terms_dict = {int:str}
     for term, wq in qv.items():
         if term in dictionary:
             offset = dictionary[term][1]
@@ -53,8 +52,7 @@ def calculate_score(qv: dict[str, float], dictionary, p):
                 if fields & 0b10001: # only add weights if it has either content or title
                     scores[doc_id]['content'] += w_c * wq + court_score
                     scores[doc_id]['title'] += w_t * wq + court_score
-                    top_terms_dict[doc_id] = top_terms
-    return [(id, w['content'], w['title']) for id, w in scores.items()], top_terms_dict
+    return [(id, w['content'], w['title']) for id, w in scores.items()]
 
 
 def total_score(docs_scores: list[tuple[int, float, float]], cit_match: int | None=None, date_matches: set[int] | None=None, year_matches: set[int] | None=None, score_threshold= 0.02):
