@@ -97,7 +97,7 @@ def process_boolean_term(dictionary, term, p, scores=None, mask=None, qv=None):
             scores[doc_id]['content'] = w_c
             scores[doc_id]['title'] = w_t
             scores[doc_id]['court'] = vb_decode(enc_court_id)[0]
-    return sorted([(id, w['content'], w['title'], w['content']) for id, w in scores.items()], key=lambda x: x[0])
+    return sorted([(id, w['content'], w['title'], w['court']) for id, w in scores.items()], key=lambda x: x[0])
 
 
 class TestQuery(unittest.TestCase):
