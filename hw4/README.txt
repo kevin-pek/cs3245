@@ -7,30 +7,50 @@ We're using Python Version 3.10.12 for this assignment.
 
 == General Notes about this assignment ==
 
+INDEXING
+
 In the indexing phase, we construct the inverted index and posting list based
 on the vector space model. However we also include positional indices to allow
-for phrase queries, and also build zone and field indexes for case specific
-information.
+for phrase queries, include zones and fields indexes for case metadata, and also
+build some auxiliary indexes to facilitate pseudo relevant feedback.
 
-INVERTED INDEX
+- In our preprocessing we use several regexes to extract relevant case info such
+  as the citation, date, year, and title. We use the wordnet lemmatiser to
+  process each term in the content and title of the case, and do case folding
+  and stopword removal. We also introduce custom stopwords to be used alongside
+  the nltk stopword corpus, that we deemed suitable for the context of a legal
+  case. POS tagging was also done as part of the lemmatisation process.
 
-- Index maps terms to gap encoded posting list, with each posting being
-  represented by a tuple with the following data in sequence:
+- Our inverted index maps terms to a gap encoded posting list, with each posting
+  being represented by a tuple with the following data in sequence:
    - variable & gap encoded doc_id
+   - variable encoded court id representing the court the legal case belongs to.
+     This mapping is found in utils/preprocessing.py and their corresponding
+     weights are used in utils/scoring.py.
    - tf-idf content weight w lnc weighing
    - tf-idf title weight w lnc weighing
    - fields byte representing presence of term in each zone/field of document
    - gap & variable encoded positional list for term occurrences within document
 
-- Fields is a byte indicating zones/fields, title, citation, date, court, content
-    00001 - term appears in contents zone of the document
-    00010 - term appears in court field
-    00100 - term appears in date field
-    01000 - term appears in citation field
-    10000 - term appears in title zone
+- Fields is a byte that uses bits to indicate zones/fields. For each posting we
+  include the following information: year, date, title, content
+    0001 - term appears in contents zone of the document
+    0010 - term appears in title zone
+    0100 - term appears in date field
+    1000 - term appears in year field
   Note that a term can be present in multiple zones/fields at once so the fields
   bit can have multiple 1s.
 
+- During the indexing step we also construct 2 auxiliary indexes:
+   1. Maps citation that was extracted from the case to the document id.
+   2. Maps document id to top 5 most frequent terms in the document. This is
+      used for pseudo relevance feedback in the searching phase.
+
+- The dictionary is also compressed during the process of writing the file to
+  disk. We use frontcoding to compress the terms in the dictionary.
+
+
+SEARCHING
 
 In the searching phase, we first validate and determine the type of query that
 is given. If it is an invalid query we immediately skip the query. Boolean
@@ -119,6 +139,7 @@ utils/preprocessing.py      - contains convert_pos function to map part-of-speec
                             extract_citations function to identify and extract legal citation patterns from case titles.
                             test_extract_citations function for testing the accuracy of the citation extraction logic.
                             extract_date function to detect and parse date patterns in queries or documents.
+
 utils/dictionary.py         - contains the ZoneIndex class, which contains add_term function to add a term along with its position to the index, updating frequency and field information.
                             add_court function to register a court's presence and updates its corresponding field bit.
                             add_year function to add a year as a term, updating its frequency and field information.
@@ -126,6 +147,7 @@ utils/dictionary.py         - contains the ZoneIndex class, which contains add_t
                             add_title function to add terms specifically from titles, updating both their general and title-specific frequencies, as well as field information.
                             calculate_weights function to compute the tf-idf weights for terms in a document, constructs the postings list including top-k terms, and manages normalization.
                             save function to compress and save the postings list and term dictionary to disk using various encoding techniques.
+
 utils/compression.py        - contains gap_encode function to convert a sorted list of integers into their respective gaps.
                             vb_encode function to encode an integer into a byte array using variable byte encoding.
                             vb_decode function to decode a byte array back into a list of integers using variable byte encoding.
@@ -134,19 +156,24 @@ utils/compression.py        - contains gap_encode function to convert a sorted l
                             load_dict function to load and decode a compressed dictionary from disk using frontcoding and pickle deserialization.
                             TestPostingCompression class for unittests that verify the functionality of gap encoding/decoding and variable byte encoding/decoding, including combined operations.
                             TestDictionaryCompression class for unittests that verify the functionality of compressing and loading dictionaries, ensuring the integrity of saved and retrieved data.
+
 utils/query.py          - contains process_query function to parse and process the input query, determining if it's a boolean or free text query and validating its structure.
                             process_boolean_query function to process boolean queries, handling term intersection and phrase queries using a document frequency-based approach.
                             query_expansion function to perform query expansion using WordNet synsets, hypernyms, and hyponyms to enrich the query with semantically similar terms.
                             TestProcessQuery class, a unittest.TestCase subclass, providing various test cases for validating the process_query function.
+
 utils/scoring.py            - contains get_court_w function which retrieves a weight for a court ID from a predefined dictionary, 
                             calculate_score function which calculates document scores using a query vector, term dictionary, and a file pointer for postings,
                             total_score function which computes final scores for documents, adjusts for matches, and filters by a threshold.
+
 utils/boolean.py            - contains intersect function, which returns the intersection of two sorted lists based on the first element.
                             intersect_consecutive function which finds positions in p2 directly following positions in p1.
                             process_phrase_term function which processes phrase queries by checking consecutive term appearance in documents, updating scores based on term weights.
                             process_boolean_term function which processes a boolean term, updating document scores based on term weights and field filters.
                             TestQuery class which contains test cases to verify the correct functioning of the phrase query processing using unittest framework. 
+
 utils/vector.py             - contains normalise_vector function to compute the TF-IDF normalized vector for a given query against a dictionary of document frequencies and total document count.
+
 utils/file.py               - contains read_pkl_csv function, which reads a CSV file, parses its contents into a dictionary, and then pickles it to a file for storage.
                             load_pkl function loads a pickle file containing documents and returns it as a dictionary.
 
