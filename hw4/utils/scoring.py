@@ -67,7 +67,7 @@ def total_score(docs_scores: list[tuple[int, float, float, int]], cit_match: int
             score += 0.01
         if score < score_threshold: # threshold
             continue
-        scores[doc_id] = score
+        scores[doc_id] = max(scores.get(doc_id, 0), score) # in case there are duplicates from pseudo relevance feedback
     # print("SCORES: ", sorted([(id, w) for id, w in scores.items()], key=lambda x: x[1], reverse=True))
     return scores
 

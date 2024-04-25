@@ -69,26 +69,26 @@ def run_search(dict_file, postings_file, queries_file, results_file):
             scores = total_score(docs_scores, cit_match, year_matches, date_matches)
 
             # Pseudo relevance feedback by taking top k terms from top k results
-            # k = 5
-            # with open(f"topk_{postings_file}", "rb") as topk:
-            #     doc_topk = pickle.load(topk)
+            k = 5
+            with open(f"topk_{postings_file}", "rb") as topk:
+                doc_topk = pickle.load(topk)
 
-            # sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-            # new_terms = []
-            # for id, _ in sorted_scores[:k]:
-            #     new_terms.extend(doc_topk[id])
-            # if is_boolean:
-            #     terms.extend(new_terms)
-            #     docs_scores = process_boolean_query(dictionary, terms, p, N)
-            #     # print("DOCUMENTS: ", docs_scores)
-            # else: # is vector
-            #     terms.extend(new_terms)
-            #     query_vector = normalise_vector(terms, dictionary, N)
-            #     # print("FREE TEXT: ", query_vector)
-            #     docs_scores = calculate_score(query_vector, dictionary, p)
-            #     # print("DOCUMENTS: ", docs_scores)
-            # 
-            # scores = total_score(docs_scores, cit_match, year_matches, date_matches)
+            sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+            new_terms = []
+            for id, _ in sorted_scores[:k]:
+                new_terms.extend(doc_topk[id])
+            if is_boolean:
+                for term in new_terms:
+                    docs_scores.extend(process_boolean_term(dictionary, term, p))
+                # print("DOCUMENTS: ", docs_scores)
+            else: # is vector
+                terms.extend(new_terms)
+                query_vector = normalise_vector(terms, dictionary, N)
+                # print("FREE TEXT: ", query_vector)
+                docs_scores = calculate_score(query_vector, dictionary, p)
+                # print("DOCUMENTS: ", docs_scores)
+
+            scores = total_score(docs_scores, cit_match, year_matches, date_matches)
             sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
             results.write(' '.join(str(id) for id, _ in sorted_scores))# scores))
